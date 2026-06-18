@@ -50,11 +50,23 @@ def generate_ai_email(max_length, desired_label, max_attempts=3):
 
     client = Groq(api_key=api_key)
     prompt_parts = [
-        "Generate one professional, clever, and tricky email or message for a phishing quiz.",
-        "It must feel like a real-world workplace or consumer scenario (1-2 sentences).",
-        "Return a JSON object with keys 'text' and 'label'.",
-        f"The label must be exactly '{desired_label}'.",
-        "No markdown, no extra keys.",
+        "You are generating training data for a phishing awareness quiz.",
+        "Generate one realistic email or message that a real person would receive",
+        "in a workplace or personal inbox.",
+        "Rules:",
+        "- If label is 'phishing': Include at least one subtle red flag",
+        "(urgency, spoofed domain, credential request, authority impersonation,",
+        "emotional manipulation, or too-good-to-be-true offer).",
+        "Use realistic-looking but clearly fake domains. Do NOT use 'example.com'.",
+        "- If label is 'legitimate': Write a genuinely safe internal or business email",
+        "with no suspicious elements. Reference plausible internal systems,",
+        "named colleagues, or specific dates. Do NOT ask for credentials or passwords.",
+        "- Format: 3-6 sentences. Include a subject line for roughly half of messages.",
+        "- Vary the sender persona: IT, HR, Finance, Manager, External vendor,",
+        "Shipping company, Bank, Social media platform, etc.",
+        f"- The label must be exactly '{desired_label}'.",
+        "- Return ONLY a JSON object with keys 'text' and 'label'.",
+        "No markdown, no extra keys, no explanation.",
     ]
     prompt = " ".join(prompt_parts)
 
@@ -84,7 +96,7 @@ def generate_ai_email(max_length, desired_label, max_attempts=3):
             continue
         text = email.get("text", "").strip()
         label = email.get("label", "").strip().lower()
-        if not text or label not in {"phishing", "legit"}:
+        if not text or label not in {"phishing", "legitimate"}:
             continue
         if label != desired_label:
             continue
@@ -137,7 +149,7 @@ def create_app():
 
     @app.get("/get-email")
     def get_email():
-        desired_label = random.choice(["phishing", "legit"])
+        desired_label = random.choice(["phishing", "legitimate"])
         email = None
         last_error = None
         for _attempt in range(2):

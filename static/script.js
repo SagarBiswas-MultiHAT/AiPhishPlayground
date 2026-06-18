@@ -277,7 +277,7 @@ function handleTimeout() {
   state.answered = true;
   state.attempts += 1;
   updateStats();
-  const label = state.currentEmail.label === 'legit' ? 'legitimate' : 'phishing';
+  const label = state.currentEmail.label === 'legitimate' ? 'legitimate' : 'phishing';
   setStatus(`Time's up. That one was ${label}.`, 'warning');
   triggerEmailEffect('shake');
   setTimeout(loadEmail, 1800);
@@ -357,7 +357,7 @@ function handleAnswer(choice) {
     setStatus('Correct! You spotted it.', 'success');
     triggerEmailEffect('correct-pulse');
   } else {
-    const label = state.currentEmail.label === 'legit' ? 'legitimate' : 'phishing';
+    const label = state.currentEmail.label === 'legitimate' ? 'legitimate' : 'phishing';
     setStatus(`Close call. That message was ${label}.`, 'warning');
     triggerEmailEffect('shake');
   }
@@ -449,7 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Event listeners
   elements.phishingButton.addEventListener('click', () => handleAnswer('phishing'));
-  elements.legitButton.addEventListener('click', () => handleAnswer('legit'));
+  elements.legitButton.addEventListener('click', () => handleAnswer('legitimate'));
   elements.pauseButton.addEventListener('click', togglePause);
   elements.feedbackForm.addEventListener('submit', submitFeedback);
   elements.feedbackInput.addEventListener('input', updateCounter);

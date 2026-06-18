@@ -1,358 +1,234 @@
 [
   {
-    "text": "Dear valued employee, our security team has identified a potential vulnerability in our company's cloud storage system. Please click on the link below to reset your cloud access: https://cloudreset.example.com. You will be required to enter your username and password to complete the process.",
+    "text": "Subject: Action Required — Verify Your Office 365 Credentials\n\nDear Employee,\n\nOur system detected an unauthorized sign-in attempt on your Microsoft 365 account from an unrecognized device in Lagos, Nigeria. To prevent account suspension, please verify your credentials within 24 hours by clicking below:\n\nhttps://micros0ft-365-verify.com/auth/login\n\nFailure to act will result in permanent account lockout.\n\nMicrosoft Security Team",
     "label": "phishing"
   },
   {
-    "text": "Dear valued employee, we noticed an unusual login attempt from your IP address. Please click here to verify your identity and confirm your account security.",
+    "text": "Subject: Password Expiration Notice — Immediate Action Needed\n\nHi,\n\nYour corporate network password expires today. If you do not reset it now, you will lose access to email, VPN, and all internal applications.\n\nReset your password here: https://corp-password-reset.secure-auth.net/update\n\nThis link expires in 2 hours.\n\nIT Helpdesk",
     "label": "phishing"
   },
   {
-    "text": "Subject: Urgent: Your Company-Wide IT Security Update | Please click this link to confirm your login credentials: https://example.com/confirm-login or reply to this email with 'CONFIRM' to complete the update.",
+    "text": "Subject: Unusual Sign-In Activity on Your Account\n\nWe noticed a sign-in to your account from a new device:\n\nDevice: Windows PC\nLocation: Bucharest, Romania\nTime: June 15, 2026, 3:42 AM\n\nIf this wasn't you, secure your account immediately:\nhttps://accounts-g00gle.com/security/alert\n\nGoogle Account Security",
     "label": "phishing"
   },
   {
-    "text": "Dear valued employee, we have detected unusual activity on your account. Please update your login credentials by clicking on this link: https://example.com/update-credentials immediately to prevent any further issues.",
+    "text": "Subject: DocuSign: Invoice #INV-29841 Ready for Review\n\nHi,\n\nYour vendor Apex Supply Co. has sent you an invoice for $4,320.00 via DocuSign. Please review and approve the document by clicking the link below:\n\nhttps://docusign-review.serverdocs.net/sign/INV-29841\n\nThis document expires in 48 hours.",
     "label": "phishing"
   },
   {
-    "text": "Dear John, as part of our regular IT security review, please log in to the company portal at https://portal.contoso.com to review your account settings. No immediate action is required if everything looks correct.",
+    "text": "Subject: Shared Document: Q3 Budget Forecast\n\nHi,\n\nMark Thompson has shared a document with you on SharePoint. Click below to view the Q3 Budget Forecast:\n\nhttps://sharepointonline-docs.com/view/q3-budget\n\nYou'll need to sign in with your company credentials to access the file.",
+    "label": "phishing"
+  },
+  {
+    "text": "Hey, are you at your desk? I need you to handle something for me quickly — I'm stuck in a board meeting and can't make a call. Pick up some Apple gift cards for a client appreciation event. Get 5x $200 cards and send me the redemption codes. I'll reimburse you today. Thanks.\n\n— David Chen, CEO",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: URGENT — Wire Transfer Authorization\n\nHi Jennifer,\n\nI need you to process an urgent wire transfer of $28,500 to our new supplier before end of business today. The bank details are attached. Please do not discuss this with anyone else until the transfer is confirmed — it's a confidential acquisition.\n\nThanks,\nRobert Walsh, CFO",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Re: Salary Adjustment — Confidential\n\nHi,\n\nAs discussed, please update the direct deposit for my payroll to the following account effective immediately:\n\nBank: Chase\nRouting: 021000021\nAccount: 483920174\n\nPlease confirm once updated. This is time-sensitive.\n\nBest,\nAmanda Torres, VP of Operations",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: FedEx: Your Package Could Not Be Delivered\n\nHello,\n\nWe attempted to deliver your package (Tracking #7294-8301-4829) but no one was available to sign. A $3.99 redelivery fee is required before we can reattempt.\n\nSchedule redelivery: https://fedex-redelivery-schedule.com/pay\n\nIf not claimed within 5 days, the package will be returned to sender.\n\nFedEx Customer Service",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: USPS: Customs Fee Required for International Shipment\n\nYour international parcel (ID: US9482710384) is being held at customs. A fee of $6.50 is required before release.\n\nPay customs fee: https://usps-customs-clearance.net/pay/US9482710384\n\nFailure to pay within 3 business days will result in the package being returned.\n\nUSPS International Services",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: DHL Express: Delivery Address Confirmation Needed\n\nDear Customer,\n\nYour shipment (AWB: 4829103749) requires address verification before final delivery. Please confirm your delivery details:\n\nhttps://dhl-express-tracking.info/confirm-address\n\nThis must be completed within 24 hours.\n\nDHL Express Support",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Alert: Suspicious Transaction on Your Account\n\nDear Customer,\n\nWe detected an unusual transaction of $892.47 at ELECTRONICS PLUS in Miami, FL on your account ending in 4821. If you did not authorize this, please verify your identity immediately:\n\nhttps://chase-secure-alerts.com/verify\n\nIgnoring this notice may result in further unauthorized charges.\n\nChase Fraud Protection",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Your PayPal Account Has Been Limited\n\nDear Customer,\n\nWe've noticed unusual activity and have temporarily limited your account. To restore full access, please verify your information:\n\nhttps://paypa1-resolution-center.com/verify\n\nIf we don't hear from you within 48 hours, your account may be permanently restricted.\n\nPayPal Security",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Tax Refund Notification — IRS\n\nDear Taxpayer,\n\nAfter reviewing your 2025 tax return, we have determined you are eligible for a refund of $1,247.00. To receive your refund via direct deposit, please verify your banking information:\n\nhttps://irs-refund-portal.com/claim\n\nThis offer expires in 7 days.\n\nInternal Revenue Service",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: IT Support: Your Computer Has a Critical Security Vulnerability\n\nHi,\n\nOur automated scan detected a critical vulnerability (CVE-2026-4821) on your workstation. To patch this immediately, please download and run the security update:\n\nhttps://it-security-patch.download/update.exe\n\nDo not restart your computer until the patch is applied.\n\nIT Security Operations",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Google Workspace: Storage Quota Exceeded\n\nYour Google Workspace storage is 98% full. You will no longer be able to send or receive emails after June 20, 2026.\n\nUpgrade your storage plan: https://workspace-g00gle.com/storage/upgrade\n\nAlternatively, delete files to free space.\n\nGoogle Workspace Admin",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Zoom: Scheduled Meeting Recording Available\n\nHi,\n\nYour Zoom meeting recording from \"Q2 Strategy Review\" is ready. Click below to access:\n\nhttps://zoom-cloud-recordings.net/play/meeting-83921\n\nPlease log in with your corporate credentials to view.\n\nZoom Notifications",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: HR: Updated Direct Deposit Form Required\n\nDear Employee,\n\nDue to our migration to a new payroll provider, all employees must re-submit their direct deposit information by Friday. Please complete the form below:\n\nhttps://hr-payroll-update.formstack.io/direct-deposit\n\nFailure to update will delay your next paycheck.\n\nHR Department",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: W-2 Request from HR\n\nHi,\n\nCan you please send me a PDF of all employee W-2 forms for 2025? We need them for the external audit happening this week. Please reply to this email directly with the files.\n\nThanks,\nSusan Park, Director of HR",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Open Enrollment Deadline Tomorrow — Benefits Portal Access\n\nReminder: Open enrollment closes tomorrow at 5 PM EST. If you haven't selected your 2026 benefits, you will default to last year's plan.\n\nAccess the benefits portal: https://employee-benefits-portal.net/enroll\n\nYou'll need to re-enter your SSN and date of birth to verify your identity.\n\nHuman Resources",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Congratulations! You've Won a $500 Amazon Gift Card\n\nDear Valued Customer,\n\nYou've been selected as today's lucky winner of a $500 Amazon Gift Card! Claim your reward now before it expires:\n\nhttps://amazon-rewards-claim.com/winner\n\nOffer valid for 24 hours only.\n\nAmazon Rewards Team",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Employee of the Month — Claim Your $1,000 Bonus\n\nCongratulations! You have been selected as Employee of the Month for June. A $1,000 bonus has been approved. To receive it, please confirm your banking details:\n\nhttps://acme-employee-rewards.com/claim-bonus\n\nHR Recognition Program",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Invoice #8847 — Payment Overdue\n\nDear Accounts Payable,\n\nThis is a reminder that Invoice #8847 for $12,750.00 is now 15 days overdue. Please process payment immediately to avoid late fees and service interruption.\n\nView invoice: https://quickbooks-invoicing.net/view/INV-8847\n\nTechServ Solutions LLC",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Updated Banking Details — Please Note\n\nHi,\n\nPlease note that our company banking details have changed effective immediately. All future payments should be directed to:\n\nBank: Wells Fargo\nRouting: 121042882\nAccount: 7291038475\n\nPlease update your records and confirm receipt.\n\nBest regards,\nDelta Office Supplies — Accounts Receivable",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: MFA Verification Code — Action Required\n\nYour multi-factor authentication code is: 847291\n\nIf you did not request this code, your account may be compromised. Click below to secure your account:\n\nhttps://secure-mfa-reset.com/protect\n\nThis code expires in 10 minutes.",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Instagram: Verify Your Account to Avoid Deactivation\n\nHi,\n\nWe've detected unusual login activity on your Instagram account. To prevent deactivation, please verify your identity:\n\nhttps://instagram-verify-account.com/secure\n\nIf you don't verify within 48 hours, your account will be permanently removed.\n\nInstagram Security Team",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: LinkedIn: Someone Viewed Your Profile from a New Location\n\nHi,\n\nYour LinkedIn profile was accessed from an unrecognized location (Moscow, Russia). If this wasn't you, immediately secure your account:\n\nhttps://linkedin-security-check.com/verify\n\nLinkedIn Trust & Safety",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Voicemail Notification — 1 New Message\n\nYou have a new voicemail from +1 (555) 392-8471 received at 2:14 PM. Listen to your message:\n\nhttps://voicemail-portal.cloud/play/msg-29481\n\nSign in with your email credentials to access.\n\nUnified Communications",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Dropbox: Shared File Requires Your Attention\n\nHi,\n\nLisa Chen shared \"Contract_Final_Draft.pdf\" with you on Dropbox. Review the document and provide your electronic signature:\n\nhttps://dropbox-file-sharing.net/sign/contract-final\n\nThis link expires in 72 hours.\n\nDropbox Notifications",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Apple ID: Your Account Will Be Disabled\n\nDear Customer,\n\nWe were unable to verify your billing information for your Apple ID. If not updated within 24 hours, your account will be disabled and all purchases will be lost.\n\nUpdate billing info: https://appleid-verify-billing.com/update\n\nApple Support",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Scheduled Maintenance — VPN Downtime Tonight\n\nHi Team,\n\nThe IT Infrastructure team will be performing scheduled maintenance on our VPN gateway tonight from 11:00 PM to 2:00 AM EST. During this window, remote access will be temporarily unavailable.\n\nNo action is required on your part. If you need to work during this time, please save your work and reconnect after 2:00 AM.\n\nThanks,\nKevin Liu\nIT Infrastructure Team",
     "label": "legitimate"
   },
   {
-    "text": "Hello Jane, your HR profile has been updated with new benefits information. You can review the details securely through our internal HR system here: https://hr.contoso.com/benefits. This link is internal and requires your company login.",
+    "text": "Subject: Reminder: Monthly All-Hands Meeting Tomorrow at 10 AM\n\nHi everyone,\n\nJust a reminder that our monthly all-hands meeting is tomorrow (Thursday) at 10:00 AM in Conference Room B. The agenda includes Q2 results, upcoming product launches, and a brief update from the facilities team about the office renovation.\n\nCalendar invite was sent last week — let me know if you didn't receive it.\n\nBest,\nPriya Sharma\nChief of Staff",
     "label": "legitimate"
   },
   {
-    "text": "Team, the upcoming company holiday party will take place on Friday, December 20th. Please RSVP through our official internal events portal: https://events.contoso.com/holidayparty. Only employees with company credentials can access this portal.",
+    "text": "Subject: New Printer Setup on 3rd Floor\n\nHi all,\n\nWe've installed a new color printer on the 3rd floor near the break room. The printer name is \"3F-Color-HP\" and it should auto-discover on the network. If you need help adding it, stop by the IT desk or submit a ticket through ServiceNow.\n\nCheers,\nMarcus\nIT Support",
     "label": "legitimate"
   },
   {
-    "text": "Dear Alex, as part of routine maintenance, the IT department has scheduled a system update tonight from 11:00 PM to 1:00 AM. No action is required on your part. You may experience temporary downtime in accessing internal applications.",
+    "text": "Subject: Office Closed July 4th — Holiday Schedule\n\nHi Team,\n\nA reminder that the office will be closed on Friday, July 4th for Independence Day. If you're working on a client deliverable due that week, please coordinate with your project lead to adjust timelines.\n\nEnjoy the long weekend!\n\nBest,\nHR Department",
     "label": "legitimate"
   },
   {
-    "text": "Subject: Urgent: Security Review Required. Please click on this link to verify your account credentials immediately, as our system has detected suspicious activity.",
-    "label": "legit"
+    "text": "Subject: Updated PTO Policy Effective August 1\n\nDear Team,\n\nStarting August 1, we are updating our PTO policy to provide 3 additional personal days per year for all full-time employees. The updated policy document is available on the HR portal under Company Policies > Time Off.\n\nPlease review the changes at your convenience. No immediate action is required.\n\nBest regards,\nCatherine Wells\nDirector of Human Resources",
+    "label": "legitimate"
   },
   {
-    "text": "Subject: Urgent: Your company-issued laptop's warranty is about to expire. Please click on the link below to update your device's security settings.",
-    "label": "legit"
+    "text": "Subject: Parking Garage Maintenance Notice\n\nHi everyone,\n\nThe parking garage on Level P2 will undergo resurfacing work this Saturday and Sunday. If you come to the office this weekend, please use the Level P1 entrance.\n\nNormal parking access will resume Monday morning.\n\nThanks,\nFacilities Management",
+    "label": "legitimate"
   },
   {
-    "text": "Subject: Urgent - Company Wide IT Security Update\nDear [Employee Name], We have been notified of a potential security breach affecting all employee login credentials. Please click the link below to update your password and ensure the security of your account.\n https://companyupdate.example.com\nBest regards, IT Department",
-    "label": "legit"
+    "text": "Subject: Welcome to the Team — New Hire Introductions\n\nHi all,\n\nPlease join me in welcoming three new team members starting this Monday:\n\n- James Park — Software Engineer, Platform Team\n- Sofia Rodriguez — Product Designer, UX Team\n- David Okafor — Data Analyst, Business Intelligence\n\nFeel free to stop by and say hello!\n\nBest,\nTanya Mitchell\nPeople Operations",
+    "label": "legitimate"
   },
   {
-    "text": "Subject: Urgent: Your Account Access Request - Please click here to verify your account details and confirm your two-factor authentication setup.",
-    "label": "phishing"
+    "text": "Subject: Q2 Sprint Retrospective — Action Items\n\nHi Team,\n\nThanks for a great retro session yesterday. Here's a summary of the action items we agreed on:\n\n1. Reduce PR review turnaround to 24 hours (owners: all engineers)\n2. Add integration test coverage for the payments module (owner: Raj)\n3. Schedule weekly cross-team sync with Design (owner: Lisa)\n\nI've added these to our Jira board. Let me know if anything was missed.\n\nBest,\nChris Nakamura\nEngineering Manager",
+    "label": "legitimate"
   },
   {
-    "text": "You have been flagged for a security audit. Please click this link to verify your account and confirm your identity: https://example.com/verify",
-    "label": "legit"
+    "text": "Subject: Project Atlas — Status Update\n\nHi Sarah,\n\nQuick update on Project Atlas: We completed the database migration over the weekend and all staging tests passed. The QA team will begin their final round of testing tomorrow. Barring any blockers, we're on track for the June 25th production release.\n\nLet me know if you have any concerns.\n\nThanks,\nBrian Torres\nTech Lead",
+    "label": "legitimate"
   },
   {
-    "text": "Dear valued employee, we have identified a potential security risk in your account and require you to verify your login credentials by clicking this link to update your account information: https://example.com/update_account. Please do this immediately to ensure access to company resources.",
-    "label": "phishing"
+    "text": "Subject: Vendor Meeting Rescheduled to Wednesday\n\nHi Priya,\n\nThe call with Cloudflare has been rescheduled from Monday to Wednesday at 2 PM. Same Zoom link as before. I've updated the calendar invite.\n\nLet me know if the new time doesn't work for you.\n\nBest,\nAlex Kim\nVendor Relations",
+    "label": "legitimate"
   },
   {
-    "text": "Subject: Urgent: Your IT account access is being suspended due to a potential security breach. Please click on this link to verify your login credentials and prevent any disruption of your work.",
-    "label": "legit"
+    "text": "Subject: Annual Compliance Training Due by June 30\n\nHi Team,\n\nThis is a reminder that the annual compliance training modules (Data Privacy, Anti-Harassment, and Workplace Safety) must be completed by June 30. You can access the courses through our LMS at learning.acmecorp.com using your existing company SSO login.\n\nIf you've already completed them, no further action is needed.\n\nThanks,\nCompliance Department",
+    "label": "legitimate"
   },
   {
-    "text": "Dear Valued Employee, Your account has been flagged for a security review due to suspicious login activity. Please click on the link below to verify your identity and reset your password: https://example.com/reset-password",
-    "label": "phishing"
+    "text": "Subject: Fire Drill Scheduled for Thursday at 2 PM\n\nHi everyone,\n\nA mandatory fire drill is scheduled for this Thursday at 2:00 PM. When the alarm sounds, please calmly proceed to your designated assembly point. Floor wardens will guide the evacuation.\n\nThe drill should take approximately 15 minutes.\n\nThanks for your cooperation,\nFacilities & Safety Team",
+    "label": "legitimate"
   },
   {
-    "text": "Dear Valued Employee, we've noticed suspicious activity on your company email account and need you to confirm your login credentials to prevent any potential account breaches. Please click on the link below to verify your identity: https://example.com/verify-account",
-    "label": "phishing"
+    "text": "Subject: New Security Awareness Training Available\n\nHi Team,\n\nWe've added a new module to the security awareness training library: \"Recognizing Social Engineering Attacks.\" It's a 20-minute interactive course available on our LMS.\n\nThis is optional but highly recommended for all employees, especially those who handle sensitive data.\n\nBest,\nInfo Security Team",
+    "label": "legitimate"
   },
   {
-    "text": "A representative from the IT department has been trying to reach you regarding a security audit of our company's email system. Please click on the link below to review and respond to the audit by March 1st: https://secure-audit-system.com/confirmEmail",
-    "label": "phishing"
+    "text": "Subject: Quarterly Business Review — Slides Due Friday\n\nHi Department Leads,\n\nA reminder that your QBR presentation slides are due this Friday by 5 PM. Please upload them to the shared Google Drive folder: \"QBR Q2 2026 > Department Slides.\"\n\nThe QBR meeting is next Tuesday at 9 AM in the main conference room.\n\nThanks,\nOps Team",
+    "label": "legitimate"
   },
   {
-    "text": "Subject: Urgent: Compliance Reminder - Please update your employee profile to avoid suspension of access privileges. Click here to access the form: https://example.com/compliance-update",
-    "label": "legit"
+    "text": "Subject: Team Lunch — Friday at Noon\n\nHi Team,\n\nWe're organizing a team lunch this Friday at noon to celebrate hitting our Q2 targets. We've reserved a table at Bella's Bistro on 5th Street. The company will cover the meal.\n\nPlease RSVP by Wednesday so I can update the reservation.\n\nLooking forward to it!\nJessica Lam\nTeam Lead",
+    "label": "legitimate"
   },
   {
-    "text": "We have noticed unusual activity on your account and require you to reset your password immediately. Please click this link to verify your identity and follow the instructions to reset your password: https://example.com/reset-password",
-    "label": "phishing"
+    "text": "Subject: Laptop Refresh Program — Equipment Pickup\n\nHi,\n\nYour new laptop is ready for pickup at the IT desk on the 2nd floor. Please bring your current laptop and charger for trade-in. The swap should take about 20 minutes while we transfer your profile.\n\nAvailable times: Monday through Friday, 9 AM to 4 PM.\n\nThanks,\nIT Asset Management",
+    "label": "legitimate"
   },
   {
-    "text": "Subject: Urgent: Security Notice - Your company's cloud storage subscription is set to expire soon. Please click the link below to update your account information: https://cloudstorage.secure-access.io/login",
-    "label": "legit"
+    "text": "Subject: Expense Reports for May — Submission Deadline\n\nHi Team,\n\nFriendly reminder that May expense reports are due by June 20. Please submit them through Concur as usual. Receipts over $25 must be attached.\n\nIf you have questions about expense categories, check the Finance FAQ on the intranet or reach out to the finance team.\n\nBest,\nFinance Department",
+    "label": "legitimate"
   },
   {
-    "text": "Dear Valued Employee, We have recently upgraded our company's security protocols and require you to verify your login credentials by clicking on the link below: https://secure-login.example.com. Please do not respond to this email if you have already completed this step.",
-    "label": "legit"
+    "text": "Subject: Air Conditioning Repair — Temporary Temperature Changes\n\nHi Team,\n\nThe HVAC team will be repairing the air conditioning unit on the 4th floor today. Temperatures may fluctuate for a few hours. We've brought in portable fans for the affected areas.\n\nWe expect repairs to be completed by 3 PM.\n\nSorry for the inconvenience,\nFacilities",
+    "label": "legitimate"
   },
   {
-    "text": "Dear valued employee, we are upgrading our company's password policy to include a mandatory password reset. In order to complete this process, please click on this secure link to verify your account and reset your password: https://example.com/resetpassword",
-    "label": "legit"
+    "text": "Subject: Updated Meeting Room Booking System\n\nHi everyone,\n\nWe've upgraded our meeting room booking system. Starting Monday, please use the new Room Finder app on the intranet instead of the old calendar-based system. A quick start guide is posted on the IT Knowledge Base.\n\nThe old system will remain active until June 30 for a smooth transition.\n\nThanks,\nIT Services",
+    "label": "legitimate"
   },
   {
-    "text": "Subject: Urgent: Your account has been flagged for suspicious activity. Please click the link to verify your identity and reset your password: https://example.com/reset-password",
-    "label": "legit"
+    "text": "Subject: Contract Renewal Reminder — CloudSync Pro\n\nHi Alex,\n\nJust a heads-up that our CloudSync Pro annual license renews on July 15. The renewal quote ($14,400 for 50 seats) is in the shared Procurement folder. If you'd like to make any changes to the seat count, please let me know by July 1.\n\nThanks,\nMeera Patel\nProcurement Specialist",
+    "label": "legitimate"
   },
   {
-    "text": "Dear valued employee, We have reason to believe that your company's cloud storage account has been compromised. Please click this link to immediately reset your password and secure your data: https://example.com/resetpassword",
-    "label": "phishing"
+    "text": "Subject: Intern Orientation — Volunteer Mentors Needed\n\nHi Team,\n\nOur summer intern cohort starts on June 23 and we're looking for 4-5 volunteer mentors to help them get acclimated during their first two weeks. Time commitment is approximately 1 hour per week.\n\nIf you're interested, reply to this email by Friday.\n\nThanks,\nPeople Operations",
+    "label": "legitimate"
   },
   {
-    "text": "Your IT department has recently upgraded our company's security protocols and requires you to confirm your login credentials to avoid account suspension by clicking on the link below. https://itupdate.corp/confirm",
-    "label": "legit"
+    "text": "Subject: Git Repository Migration Complete\n\nHi Engineering,\n\nThe migration from GitLab to GitHub Enterprise is now complete. All repositories have been transferred and verified. Please update your local remotes using the instructions on the Engineering Wiki.\n\nOld GitLab links will redirect automatically for the next 90 days.\n\nBest,\nDevOps Team",
+    "label": "legitimate"
   },
   {
-    "text": "Subject: Urgent: Your Account Access Has Been Temporarily Blocked Due to Unusual Activity - Please Verify Your Identity by Clicking the Secure Link Below: https://example.com/verify-account",
-    "label": "phishing"
+    "text": "Subject: Building Access — New Badge Readers Installed\n\nHi everyone,\n\nNew badge readers have been installed at all building entrances effective today. Your existing badge will continue to work — no action needed. If you experience any issues tapping in, please visit the security desk in the lobby.\n\nThanks,\nBuilding Security",
+    "label": "legitimate"
   },
   {
-    "text": "Dear Employee, We have upgraded our company's security protocols and require you to verify your login credentials by clicking on the link below to access our new secure portal: https://secure-login-system.com/verify. Please enter your username and password to complete the update.",
-    "label": "legit"
+    "text": "Subject: Employee Assistance Program — Free Counseling Sessions\n\nHi Team,\n\nA reminder that our Employee Assistance Program (EAP) offers up to 6 free confidential counseling sessions per year for all employees and their family members. Sessions can be in-person or virtual.\n\nFor more information or to schedule a session, call 1-800-555-0199 or visit eap.acmecorp.com.\n\nBest,\nHR Wellness Team",
+    "label": "legitimate"
   },
   {
-    "text": "Subject: Urgent: Your work laptop's warranty is about to expire. Please click on the link to review and extend your coverage: https://example.com/warranty-review",
-    "label": "legit"
+    "text": "Subject: Release Notes — Mobile App v4.2.1\n\nHi Team,\n\nWe shipped Mobile App v4.2.1 to production last night. Key changes:\n\n- Fixed crash on login for Android 14 devices\n- Improved push notification delivery reliability\n- Added dark mode support for the settings screen\n\nFull changelog is on Confluence. No known regressions so far.\n\nBest,\nMobile Team",
+    "label": "legitimate"
   },
   {
-    "text": "Subject: Urgent: Your account access has been temporarily suspended due to suspicious activity. Please click here to verify your login credentials and regain access to your account immediately: https://example.com/verify-account",
-    "label": "phishing"
+    "text": "Subject: Cafeteria Menu Update — Starting Next Week\n\nHi everyone,\n\nStarting Monday, the cafeteria will be introducing a new rotating menu with more vegetarian and gluten-free options. The weekly menu will be posted on the bulletin board near the entrance and on the Facilities intranet page.\n\nLet us know what you think!\n\nCafeteria Management",
+    "label": "legitimate"
   },
   {
-    "text": "Subject: Urgent: Your Company Email Account Expiration - Please click on the link below to confirm your email account details and avoid any potential service disruptions.",
-    "label": "phishing"
+    "text": "Subject: Reminder: Performance Review Self-Assessments Due July 1\n\nHi Team,\n\nSelf-assessments for the mid-year performance review cycle are due by July 1. Please complete yours in Workday under My Performance > Self-Assessment. Your manager will schedule a 1:1 review session the following week.\n\nIf you have questions about the process, refer to the Performance Review Guide on the HR portal.\n\nBest,\nHR Operations",
+    "label": "legitimate"
   },
   {
-    "text": "Dear Employee, Our IT department has identified a security risk associated with your email account. Please click on this link to confirm your account information and prevent any potential data breaches. https://example.com/confirm-account",
-    "label": "phishing"
-  },
-  {
-    "text": "You have been selected for a prestigious employee recognition award and are eligible for a $5,000 bonus, but you must verify your identity by clicking on this link to proceed: https://example.com/verify-employee",
-    "label": "phishing"
-  },
-  {
-    "text": "Your IT account has been compromised. Please click this link to reset your password and confirm your identity: https://example.com/reset-password",
-    "label": "legit"
-  },
-  {
-    "text": "Subject: Urgent: Your IT Assistance Request - 'Your account password reset for security reasons will expire in 24 hours, please click here to confirm and log in to reset password.' \n\nDear [User],\nYou have recently accessed a sensitive corporate website from an unsecured network. Please click here to complete your account security update to prevent data loss: https://example.com/confirm-account-update \nBest regards,\nIT Support",
-    "label": "phishing"
-  },
-  {
-    "text": "Dear Valued Employee,  Our security team has detected a potential vulnerability in your account. Please click on this link to verify your information and prevent any account suspension: https://example.com/verify-account",
-    "label": "phishing"
-  },
-  {
-    "text": "Subject: Urgent: Your Account Access Has Been Restricted - Please click here to reset your password: https://example.com/reset-password",
-    "label": "phishing"
-  },
-  {
-    "text": "Subject: Urgent IT Alert: Account Access Notification\nDear valued employee,\nWe have received a report of suspicious login activity from your account location. Please click the link below to verify your account and confirm your identity: https://example.com/verify_account\nBest regards, IT Department",
-    "label": "phishing"
-  },
-  {
-    "text": "Subject: Urgent: Your account access has been flagged for review due to suspicious login activity from an unknown location. Please click the link below to complete a quick security verification process to maintain uninterrupted access to your account.",
-    "label": "legit"
-  },
-  {
-    "text": "Dear valued employee, please update your company password by clicking on this link immediately due to a recent security breach that has compromised your account, https://update.password.com",
-    "label": "legit"
-  },
-  {
-    "text": "Dear Valued Employee, As part of our ongoing efforts to enhance security, we require all team members to reset their passwords via this secure link: https://example.com/reset-password. Please click on the link to complete the process. Best regards, IT Department",
-    "label": "legit"
-  },
-  {
-    "text": "Subject: Urgent: IT Security Update Required - Please click here to verify your account credentials: https://example.com/verify-account",
-    "label": "phishing"
-  },
-  {
-    "text": "Dear [Username], our IT department has been experiencing issues with our company's cloud storage and we need you to verify your account information by clicking on the link below to reset your login credentials: https://cloudstorage.example.com/reset. Please confirm your identity to prevent any disruptions to your work.",
-    "label": "legit"
-  },
-  {
-    "text": "Subject: Urgent: Security Audit Required - Please update your password immediately to meet company compliance standards. Click here to update: https://example.com/update",
-    "label": "legit"
-  },
-  {
-    "text": "A notification from the IT department indicates that your login credentials have been temporarily disabled due to a security audit. Please click on the link below to verify your identity and reactivate your account: https://example.com/reactivate",
-    "label": "legit"
-  },
-  {
-    "text": "Dear valued employee, we have detected unusual login activity from your location and require you to confirm your identity by clicking on this link to reset your two-factor authentication. Please click here: https://example.com/verify-account",
-    "label": "legit"
-  },
-  {
-    "text": "Subject: Urgent: Security Update Required for Company VPN Access, Please click on this link to update your profile information and ensure continued access to company resources.",
-    "label": "legit"
-  },
-  {
-    "text": "We have detected an unauthorized login attempt from your IP address. Please verify your account information by clicking on this link to update your security settings: https://example.com/update-security",
-    "label": "phishing"
-  },
-  {
-    "text": "Your Microsoft 365 account has been compromised due to a known vulnerability. To protect your data, please click this link to reset your login credentials: <https://www.accountreset.microsoft.com>",
-    "label": "phishing"
-  },
-  {
-    "text": "A notification from our IT department: 'Your company-issued laptop will no longer be able to connect to the company network starting June 20th. Please click this link to update your VPN credentials before the deadline.' https://it-updates.com/update-vpn",
-    "label": "legit"
-  },
-  {
-    "text": "Subject: Urgent: Your account has been locked due to suspicious activity. Please click the link below to unlock your account and verify your identity: https://secure-accountunlock.com/login",
-    "label": "phishing"
-  },
-  {
-    "text": "Dear Valued Employee, We have updated our company's security protocols and require you to confirm your login credentials to ensure uninterrupted access to our internal systems. Please click on the link below to verify your account: https://example.com/verify",
-    "label": "legit"
-  },
-  {
-    "text": "Subject: Urgent: Your Company Password Expiration Notification\n\nDear [Employee],\n\nYou are receiving this notification because your company account password is set to expire on [date]. Please click the link below to reset your password: https://secure-login-system.com/reset\n\nBest regards, IT Department.\n\nSincerely, IT Support",
-    "label": "phishing"
-  },
-  {
-    "text": "Subject: Urgent: Your Account Has Been Locked Due to Login Issues - Please Click Here to Reset Your Password and Gain Immediate Access to Your Email Account",
-    "label": "phishing"
-  },
-  {
-    "text": "We've noticed some discrepancies in your recent expenses. Please click the link to update your expense report and confirm your identity: https://example.com/update-report",
-    "label": "legit"
-  },
-  {
-    "text": "A cybersecurity expert from your company's headquarters is reaching out to verify your account credentials due to an unusual login attempt from an IP address not associated with our usual network. Please click this link to confirm your identity and secure your account: https://example.com/verify-credentials",
-    "label": "legit"
-  },
-  {
-    "text": "Your Amazon Prime membership is at risk of being cancelled due to an update in our company's policy. Please click on this link to verify your account information to avoid any inconvenience.",
-    "label": "phishing"
-  },
-  {
-    "text": "Important: Your online banking account will be suspended if you don't verify your email address by clicking on the link below. Please confirm your identity by clicking here: https://example.com/verify-email",
-    "label": "legit"
-  },
-  {
-    "text": "Dear Valued Employee, Our company's IT department has detected a security vulnerability in your email account. Kindly click on the provided link to reset your password and secure your account immediately.",
-    "label": "phishing"
-  },
-  {
-    "text": "Subject: Urgent: Verify Your Company Credit Card Details",
-    "label": "legit"
-  },
-  {
-    "text": "Dear Valued Employee, Your company has implemented a new security protocol that requires you to verify your account password by clicking on the link below. Please click here to proceed: https://secure-login-system.com/verify-password",
-    "label": "phishing"
-  },
-  {
-    "text": "Subject: Urgent: Account Security Notification\nDear Valued Employee,\nA security review has identified suspicious activity on your company account. Please click here to verify your login credentials and ensure the security of your data.\nBest regards, IT Department\nhttps://example.com/phishy-page",
-    "label": "phishing"
-  },
-  {
-    "text": "Subject: Urgent: Your company's tax documents have been compromised. Please verify your account information immediately by clicking on the link below to reset your login credentials.",
-    "label": "phishing"
-  },
-  {
-    "text": "Dear valued team member, we have reason to believe that your account credentials may have been compromised in our recent software update. Please click here to validate your login credentials and prevent any potential security risks: https://example.com/phishing-page",
-    "label": "legit"
-  },
-  {
-    "text": "Your work laptop has been flagged for automatic software updates. Please click the link below to complete the security scan by clicking this link: https://example-security.com/update",
-    "label": "phishing"
-  },
-  {
-    "text": "Subject: Urgent - Your company's sensitive data is at risk. Please click on this link to update your password in our secure server: https://example.com/passwordupdate",
-    "label": "legit"
-  },
-  {
-    "text": "Dear employee, our IT department has implemented a new security protocol that requires you to verify your account by clicking on this link to confirm your login credentials. Please click this link: https://example.com/verify-account",
-    "label": "legit"
-  },
-  {
-    "text": "Dear valued employee, we have been informed of a security breach that may have compromised your login credentials. Please click this link to reset your password and ensure your account is secure: https://example.com/reset-password",
-    "label": "phishing"
-  },
-  {
-    "text": "Subject: Urgent: Your Account Access Has Been Restricted - Please Review and Verify Your Identity to Prevent Account Suspension. Click Here to Proceed: https://example.com/verify-account",
-    "label": "legit"
-  },
-  {
-    "text": "Dear valued employee, we have received reports of a potential security breach and your login credentials may be compromised. Please click on this link to update your password and verify your account information: https://example.com/update-password",
-    "label": "phishing"
-  },
-  {
-    "text": "Dear Employee, your login credentials have been compromised in the recent security breach. Please click this link to reset your password and verify your identity: https://example.com/reset-password",
-    "label": "legit"
-  },
-  {
-    "text": "Subject: Urgent: Your IT Account Expiration Alert - Please click on the link below to update your account information and prevent system downtime.",
-    "label": "phishing"
-  },
-  {
-    "text": "Subject: Urgent: Your account access has been restricted. Please click on the following link to verify your identity and regain access to your company resources: https://example.com/verify-account",
-    "label": "legit"
-  },
-  {
-    "text": "Hello, your account has been flagged for suspicious activity. Please click on this link to confirm your identity and secure your account: https://example.com/verify-account",
-    "label": "phishing"
-  },
-  {
-    "text": "Dear valued employee, as part of our ongoing efforts to enhance company security, we require all employees to verify their login credentials by clicking on the link below to update their account information. Please click here to proceed: https://example.com/update_account",
-    "label": "legit"
-  },
-  {
-    "text": "Dear Valued Employee,\n\nWe have detected a security concern with your login credentials and require you to verify your identity by clicking on the link below to update your information.\n\nhttps://secure-login-update-system.com\n\nSincerely, IT Security Team.",
-    "label": "phishing"
-  },
-  {
-    "text": "Your company's IT department has detected that your email account may have been compromised due to a security audit and we need you to verify your login credentials by clicking on this secure link to reset your password: https://example.com/reset-password",
-    "label": "phishing"
-  },
-  {
-    "text": "Your company's IT department has identified a potential security vulnerability in your account. To resolve the issue, please click on the link below to reset your password and verify your identity: https://example.com/reset-password",
-    "label": "phishing"
-  },
-  {
-    "text": "Dear valued employee, we require you to update your company login credentials due to a recent security incident. Please click on this link to reset your password and ensure your account remains secure: https://example-update-credentials.com",
-    "label": "phishing"
-  },
-  {
-    "text": "Subject: Urgent: Your Account Security Update Request\nDear valued employee,\nWe have recently detected suspicious activity on your company email account. To protect your sensitive information, please verify your account details by clicking on the following link: https://example.com/securityupdate. If you have any questions, please reply to this email or call the IT department at 555-1234.",
-    "label": "legit"
-  },
-  {
-    "text": "Dear Team, Our company has partnered with a cybersecurity firm to enhance our email security and they will be sending a simulated phishing test to a random selection of employees. Please click on the link below to confirm your participation and receive a free online security training.",
-    "label": "phishing"
-  },
-  {
-    "text": "A colleague from the finance department has reported a discrepancy in their expense report and would like you to verify the updated payment details. Please click here to review and confirm: https://example.com/verify-expense",
-    "label": "phishing"
-  },
-  {
-    "text": "Subject: Urgent: IT Department Notification - Update Your Company Password Policy by clicking this link to ensure continued access to company resources: https://example.com/update-password",
-    "label": "legit"
-  },
-  {
-    "text": "Your Microsoft 365 subscription is experiencing issues. Please click here to update your account information and continue using cloud services.",
-    "label": "legit"
-  },
-  {
-    "text": "Subject: Urgent: Your company's IT department has detected unusual login activity from your device. Please click the link to verify your account and update your login credentials.",
-    "label": "legit"
-  },
-  {
-    "text": "Subject: Urgent: Account Notification - Reset Your Password Immediately. You are required to reset your password due to a recent security audit detecting suspicious activity on your account. Please click the link below to proceed: https://example.com/reset-password",
-    "label": "phishing"
-  },
-  {
-    "text": "Dear valued employee, your password reset is pending due to suspicious activity on your account. Please click here to confirm your new password: https://example.com/reset-password",
-    "label": "phishing"
-  },
-  {
-    "text": "Subject: Urgent: Company Wide Password Reset Due to Security Breach\n\nDear Valued Employee,\n\nAs part of our ongoing efforts to maintain the highest level of security and protect your personal data, we require all employees to reset their passwords immediately. Please click the link below to reset your password: https://example.com/reset\n\nBest regards,\nThe IT Department",
-    "label": "legit"
-  },
-  {
-    "text": "Your Microsoft account has been flagged due to suspicious activity and we require you to verify your identity by clicking on this link to reset your password. Please click here to continue.",
-    "label": "phishing"
+    "text": "Subject: IT Tip of the Month — Recognizing Phishing Emails\n\nHi Team,\n\nThis month's security tip: Always hover over links before clicking to verify the actual URL. Phishing emails often use lookalike domains (e.g., \"micros0ft.com\" instead of \"microsoft.com\"). When in doubt, navigate directly to the website by typing the URL in your browser.\n\nStay safe out there!\n\nInformation Security Team",
+    "label": "legitimate"
   }
 ]
