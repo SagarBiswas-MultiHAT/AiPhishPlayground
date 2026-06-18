@@ -62,6 +62,7 @@ def generate_ai_email(max_length, desired_label, max_attempts=3):
         "with no suspicious elements. Reference plausible internal systems,",
         "named colleagues, or specific dates. Do NOT ask for credentials or passwords.",
         "- Format: 3-6 sentences. Include a subject line for roughly half of messages.",
+        "If you include a subject line, separate it from the body with a double newline (\\n\\n).",
         "- Vary the sender persona: IT, HR, Finance, Manager, External vendor,",
         "Shipping company, Bank, Social media platform, etc.",
         f"- The label must be exactly '{desired_label}'.",
