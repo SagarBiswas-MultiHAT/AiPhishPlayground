@@ -33,8 +33,6 @@ MAX_CONSENSUS_ROUNDS = 5
 # immediately moves to the next entry instead of wasting retries.
 GEMINI_MODELS = [
     "gemini-2.0-flash",   # Primary  - best quality
-    "gemini-2.5-flash",   # Fallback - separate free-tier quota bucket
-    "gemini-3.5-flash",   # Fallback 2
 ]
 
 # ─── Prefetch Cache ──────────────────────────────────────────────────────────
