@@ -217,7 +217,7 @@ body::after {
 .shell {
   position: relative;
   z-index: 1;
-  max-width: 960px;
+  max-width: 1160px;
   margin: 0 auto;
   padding: 56px 24px 72px;
   display: grid;
@@ -300,14 +300,12 @@ body::after {
   position: relative;
   border-radius: var(--radius);
   padding: 1px;
-  background: conic-gradient(
-    from var(--border-angle),
-    var(--neon-cyan) 0%,
-    var(--neon-violet) 25%,
-    var(--neon-magenta) 50%,
-    var(--neon-cyan) 75%,
-    var(--neon-cyan) 100%
-  );
+  background: conic-gradient(from var(--border-angle),
+      var(--neon-cyan) 0%,
+      var(--neon-violet) 25%,
+      var(--neon-magenta) 50%,
+      var(--neon-cyan) 75%,
+      var(--neon-cyan) 100%);
   animation: borderRotate 6s linear infinite, fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
   box-shadow: var(--shadow-elevated);
 }
@@ -317,14 +315,12 @@ body::after {
   position: absolute;
   inset: 0;
   border-radius: var(--radius);
-  background: conic-gradient(
-    from var(--border-angle),
-    var(--neon-cyan) 0%,
-    var(--neon-violet) 25%,
-    var(--neon-magenta) 50%,
-    var(--neon-cyan) 75%,
-    var(--neon-cyan) 100%
-  );
+  background: conic-gradient(from var(--border-angle),
+      var(--neon-cyan) 0%,
+      var(--neon-violet) 25%,
+      var(--neon-magenta) 50%,
+      var(--neon-cyan) 75%,
+      var(--neon-cyan) 100%);
   filter: blur(20px);
   opacity: 0.25;
   z-index: -1;
@@ -491,12 +487,10 @@ body::after {
   top: -100%;
   width: 100%;
   height: 50%;
-  background: linear-gradient(
-    180deg,
-    transparent,
-    var(--scan-color),
-    transparent
-  );
+  background: linear-gradient(180deg,
+      transparent,
+      var(--scan-color),
+      transparent);
   animation: scanLine 4s ease-in-out infinite;
   pointer-events: none;
 }
@@ -748,6 +742,7 @@ body::after {
     opacity: 0;
     transform: translateY(24px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -755,18 +750,24 @@ body::after {
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-4px);
   }
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -776,24 +777,31 @@ body::after {
   0% {
     top: -50%;
   }
+
   100% {
     top: 150%;
   }
 }
 
 @keyframes shake {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateX(0);
   }
+
   20% {
     transform: translateX(-6px);
   }
+
   40% {
     transform: translateX(6px);
   }
+
   60% {
     transform: translateX(-4px);
   }
+
   80% {
     transform: translateX(4px);
   }
@@ -803,9 +811,11 @@ body::after {
   0% {
     box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4);
   }
+
   70% {
     box-shadow: 0 0 0 12px rgba(0, 255, 136, 0);
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(0, 255, 136, 0);
   }
