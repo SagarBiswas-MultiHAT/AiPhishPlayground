@@ -8,6 +8,12 @@ import time
 from flask import Flask, jsonify, render_template, request
 
 try:
+    from google import genai
+    from google.genai import types
+except Exception:
+    genai = None
+
+try:
     from groq import Groq
 except Exception:
     Groq = None
@@ -41,14 +47,12 @@ def json_error(message, status=400):
 
 
 def generate_ai_email(max_length, desired_label, max_attempts=3):
-    if Groq is None:
-        return None, "Groq library is not installed. Run: pip install -r requirements-ai.txt"
+    gemini_api_key = os.getenv("GEMINI_API_KEY")
+    groq_api_key = os.getenv("GROQ_API_KEY")
 
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        return None, "Missing GROQ_API_KEY environment variable."
+    if not gemini_api_key and not groq_api_key:
+        return None, "Missing GEMINI_API_KEY or GROQ_API_KEY environment variables."
 
-    client = Groq(api_key=api_key)
     prompt_parts = [
         "You are generating training data for a phishing awareness quiz.",
         "Generate one realistic email or message that a real person would receive",
@@ -71,41 +75,56 @@ def generate_ai_email(max_length, desired_label, max_attempts=3):
     ]
     prompt = " ".join(prompt_parts)
 
-    for _attempt in range(max_attempts):
-        try:
-            completion = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7,
-                max_completion_tokens=256,
-                top_p=1,
-                stream=False,
-            )
-        except Exception as exc:
-            return None, f"AI service error: {exc}"
+    # 1. Try Gemini
+    if genai and gemini_api_key:
+        client = genai.Client(api_key=gemini_api_key)
+        for _attempt in range(max_attempts):
+            try:
+                response = client.models.generate_content(
+                    model='gemini-2.0-flash',
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        temperature=0.7,
+                    ),
+                )
+                raw_text = response.text
+                match = re.search(r"\{.*\}", raw_text, re.DOTALL)
+                if match:
+                    email = json.loads(match.group(0))
+                    text = email.get("text", "").strip()
+                    label = email.get("label", "").strip().lower()
+                    if text and label == desired_label and len(text) <= max_length:
+                        return {"text": text, "label": label}, None
+            except Exception as e:
+                print(f"Gemini generation failed: {e}")
+                break  # Fall back to Groq if Gemini fails completely
 
-        raw_text = completion.choices[0].message.content if completion.choices else ""
-        match = re.search(r"\{.*\}", raw_text, re.DOTALL)
-        if not match:
-            continue
-        try:
-            email = json.loads(match.group(0))
-        except json.JSONDecodeError:
-            continue
+    # 2. Try Groq Fallback
+    if Groq and groq_api_key:
+        client = Groq(api_key=groq_api_key)
+        for _attempt in range(max_attempts):
+            try:
+                completion = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.7,
+                    max_completion_tokens=256,
+                    top_p=1,
+                    stream=False,
+                )
+                raw_text = completion.choices[0].message.content if completion.choices else ""
+                match = re.search(r"\{.*\}", raw_text, re.DOTALL)
+                if match:
+                    email = json.loads(match.group(0))
+                    text = email.get("text", "").strip()
+                    label = email.get("label", "").strip().lower()
+                    if text and label == desired_label and len(text) <= max_length:
+                        return {"text": text, "label": label}, None
+            except Exception as exc:
+                return None, f"AI service error (Groq fallback): {exc}"
 
-        if not isinstance(email, dict):
-            continue
-        text = email.get("text", "").strip()
-        label = email.get("label", "").strip().lower()
-        if not text or label not in {"phishing", "legitimate"}:
-            continue
-        if label != desired_label:
-            continue
-        if len(text) > max_length:
-            continue
-        return {"text": text, "label": label}, None
-
-    return None, "AI response did not meet requirements."
+    return None, "AI response did not meet requirements after all attempts."
 
 
 def create_app():

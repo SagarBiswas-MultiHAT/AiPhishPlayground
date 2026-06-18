@@ -72,12 +72,13 @@ phishguard/
 ## Requirements
 
 - Python 3.11+ recommended (3.8+ should work for Flask)
-- Groq API key for AI generation
+- Gemini API key (primary) and Groq API key (fallback) for AI generation
 
 Python packages:
 
 - `Flask`
 - `groq`
+- `google-genai`
 
 ## Setup
 
@@ -90,10 +91,11 @@ pip install -r requirements.txt
 pip install -r requirements-ai.txt
 ```
 
-Set the Groq API key (PowerShell):
+Set the API keys (PowerShell):
 
 ```powershell
-$env:GROQ_API_KEY = "your_api_key_here"
+$env:GEMINI_API_KEY = "your_gemini_api_key_here"
+$env:GROQ_API_KEY = "your_groq_api_key_here"
 ```
 
 ## Run the app
@@ -138,7 +140,7 @@ This ensures the correct answer in the quiz always matches the displayed label.
 
 ## Troubleshooting
 
-- **500/503 on `/get-email`**: Check `GROQ_API_KEY` and network access.
+- **500/503 on `/get-email`**: Check `GEMINI_API_KEY`, `GROQ_API_KEY`, and network access.
 - **ModuleNotFoundError**: Activate the venv and install requirements.
 - **CI failures**: Run `ruff check .` and `pytest` locally.
 
