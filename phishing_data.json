@@ -158,5 +158,201 @@
   {
     "text": "Dear valued employee, please update your company password by clicking on this link immediately due to a recent security breach that has compromised your account, https://update.password.com",
     "label": "legit"
+  },
+  {
+    "text": "Dear Valued Employee, As part of our ongoing efforts to enhance security, we require all team members to reset their passwords via this secure link: https://example.com/reset-password. Please click on the link to complete the process. Best regards, IT Department",
+    "label": "legit"
+  },
+  {
+    "text": "Subject: Urgent: IT Security Update Required - Please click here to verify your account credentials: https://example.com/verify-account",
+    "label": "phishing"
+  },
+  {
+    "text": "Dear [Username], our IT department has been experiencing issues with our company's cloud storage and we need you to verify your account information by clicking on the link below to reset your login credentials: https://cloudstorage.example.com/reset. Please confirm your identity to prevent any disruptions to your work.",
+    "label": "legit"
+  },
+  {
+    "text": "Subject: Urgent: Security Audit Required - Please update your password immediately to meet company compliance standards. Click here to update: https://example.com/update",
+    "label": "legit"
+  },
+  {
+    "text": "A notification from the IT department indicates that your login credentials have been temporarily disabled due to a security audit. Please click on the link below to verify your identity and reactivate your account: https://example.com/reactivate",
+    "label": "legit"
+  },
+  {
+    "text": "Dear valued employee, we have detected unusual login activity from your location and require you to confirm your identity by clicking on this link to reset your two-factor authentication. Please click here: https://example.com/verify-account",
+    "label": "legit"
+  },
+  {
+    "text": "Subject: Urgent: Security Update Required for Company VPN Access, Please click on this link to update your profile information and ensure continued access to company resources.",
+    "label": "legit"
+  },
+  {
+    "text": "We have detected an unauthorized login attempt from your IP address. Please verify your account information by clicking on this link to update your security settings: https://example.com/update-security",
+    "label": "phishing"
+  },
+  {
+    "text": "Your Microsoft 365 account has been compromised due to a known vulnerability. To protect your data, please click this link to reset your login credentials: <https://www.accountreset.microsoft.com>",
+    "label": "phishing"
+  },
+  {
+    "text": "A notification from our IT department: 'Your company-issued laptop will no longer be able to connect to the company network starting June 20th. Please click this link to update your VPN credentials before the deadline.' https://it-updates.com/update-vpn",
+    "label": "legit"
+  },
+  {
+    "text": "Subject: Urgent: Your account has been locked due to suspicious activity. Please click the link below to unlock your account and verify your identity: https://secure-accountunlock.com/login",
+    "label": "phishing"
+  },
+  {
+    "text": "Dear Valued Employee, We have updated our company's security protocols and require you to confirm your login credentials to ensure uninterrupted access to our internal systems. Please click on the link below to verify your account: https://example.com/verify",
+    "label": "legit"
+  },
+  {
+    "text": "Subject: Urgent: Your Company Password Expiration Notification\n\nDear [Employee],\n\nYou are receiving this notification because your company account password is set to expire on [date]. Please click the link below to reset your password: https://secure-login-system.com/reset\n\nBest regards, IT Department.\n\nSincerely, IT Support",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Urgent: Your Account Has Been Locked Due to Login Issues - Please Click Here to Reset Your Password and Gain Immediate Access to Your Email Account",
+    "label": "phishing"
+  },
+  {
+    "text": "We've noticed some discrepancies in your recent expenses. Please click the link to update your expense report and confirm your identity: https://example.com/update-report",
+    "label": "legit"
+  },
+  {
+    "text": "A cybersecurity expert from your company's headquarters is reaching out to verify your account credentials due to an unusual login attempt from an IP address not associated with our usual network. Please click this link to confirm your identity and secure your account: https://example.com/verify-credentials",
+    "label": "legit"
+  },
+  {
+    "text": "Your Amazon Prime membership is at risk of being cancelled due to an update in our company's policy. Please click on this link to verify your account information to avoid any inconvenience.",
+    "label": "phishing"
+  },
+  {
+    "text": "Important: Your online banking account will be suspended if you don't verify your email address by clicking on the link below. Please confirm your identity by clicking here: https://example.com/verify-email",
+    "label": "legit"
+  },
+  {
+    "text": "Dear Valued Employee, Our company's IT department has detected a security vulnerability in your email account. Kindly click on the provided link to reset your password and secure your account immediately.",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Urgent: Verify Your Company Credit Card Details",
+    "label": "legit"
+  },
+  {
+    "text": "Dear Valued Employee, Your company has implemented a new security protocol that requires you to verify your account password by clicking on the link below. Please click here to proceed: https://secure-login-system.com/verify-password",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Urgent: Account Security Notification\nDear Valued Employee,\nA security review has identified suspicious activity on your company account. Please click here to verify your login credentials and ensure the security of your data.\nBest regards, IT Department\nhttps://example.com/phishy-page",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Urgent: Your company's tax documents have been compromised. Please verify your account information immediately by clicking on the link below to reset your login credentials.",
+    "label": "phishing"
+  },
+  {
+    "text": "Dear valued team member, we have reason to believe that your account credentials may have been compromised in our recent software update. Please click here to validate your login credentials and prevent any potential security risks: https://example.com/phishing-page",
+    "label": "legit"
+  },
+  {
+    "text": "Your work laptop has been flagged for automatic software updates. Please click the link below to complete the security scan by clicking this link: https://example-security.com/update",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Urgent - Your company's sensitive data is at risk. Please click on this link to update your password in our secure server: https://example.com/passwordupdate",
+    "label": "legit"
+  },
+  {
+    "text": "Dear employee, our IT department has implemented a new security protocol that requires you to verify your account by clicking on this link to confirm your login credentials. Please click this link: https://example.com/verify-account",
+    "label": "legit"
+  },
+  {
+    "text": "Dear valued employee, we have been informed of a security breach that may have compromised your login credentials. Please click this link to reset your password and ensure your account is secure: https://example.com/reset-password",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Urgent: Your Account Access Has Been Restricted - Please Review and Verify Your Identity to Prevent Account Suspension. Click Here to Proceed: https://example.com/verify-account",
+    "label": "legit"
+  },
+  {
+    "text": "Dear valued employee, we have received reports of a potential security breach and your login credentials may be compromised. Please click on this link to update your password and verify your account information: https://example.com/update-password",
+    "label": "phishing"
+  },
+  {
+    "text": "Dear Employee, your login credentials have been compromised in the recent security breach. Please click this link to reset your password and verify your identity: https://example.com/reset-password",
+    "label": "legit"
+  },
+  {
+    "text": "Subject: Urgent: Your IT Account Expiration Alert - Please click on the link below to update your account information and prevent system downtime.",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Urgent: Your account access has been restricted. Please click on the following link to verify your identity and regain access to your company resources: https://example.com/verify-account",
+    "label": "legit"
+  },
+  {
+    "text": "Hello, your account has been flagged for suspicious activity. Please click on this link to confirm your identity and secure your account: https://example.com/verify-account",
+    "label": "phishing"
+  },
+  {
+    "text": "Dear valued employee, as part of our ongoing efforts to enhance company security, we require all employees to verify their login credentials by clicking on the link below to update their account information. Please click here to proceed: https://example.com/update_account",
+    "label": "legit"
+  },
+  {
+    "text": "Dear Valued Employee,\n\nWe have detected a security concern with your login credentials and require you to verify your identity by clicking on the link below to update your information.\n\nhttps://secure-login-update-system.com\n\nSincerely, IT Security Team.",
+    "label": "phishing"
+  },
+  {
+    "text": "Your company's IT department has detected that your email account may have been compromised due to a security audit and we need you to verify your login credentials by clicking on this secure link to reset your password: https://example.com/reset-password",
+    "label": "phishing"
+  },
+  {
+    "text": "Your company's IT department has identified a potential security vulnerability in your account. To resolve the issue, please click on the link below to reset your password and verify your identity: https://example.com/reset-password",
+    "label": "phishing"
+  },
+  {
+    "text": "Dear valued employee, we require you to update your company login credentials due to a recent security incident. Please click on this link to reset your password and ensure your account remains secure: https://example-update-credentials.com",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Urgent: Your Account Security Update Request\nDear valued employee,\nWe have recently detected suspicious activity on your company email account. To protect your sensitive information, please verify your account details by clicking on the following link: https://example.com/securityupdate. If you have any questions, please reply to this email or call the IT department at 555-1234.",
+    "label": "legit"
+  },
+  {
+    "text": "Dear Team, Our company has partnered with a cybersecurity firm to enhance our email security and they will be sending a simulated phishing test to a random selection of employees. Please click on the link below to confirm your participation and receive a free online security training.",
+    "label": "phishing"
+  },
+  {
+    "text": "A colleague from the finance department has reported a discrepancy in their expense report and would like you to verify the updated payment details. Please click here to review and confirm: https://example.com/verify-expense",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Urgent: IT Department Notification - Update Your Company Password Policy by clicking this link to ensure continued access to company resources: https://example.com/update-password",
+    "label": "legit"
+  },
+  {
+    "text": "Your Microsoft 365 subscription is experiencing issues. Please click here to update your account information and continue using cloud services.",
+    "label": "legit"
+  },
+  {
+    "text": "Subject: Urgent: Your company's IT department has detected unusual login activity from your device. Please click the link to verify your account and update your login credentials.",
+    "label": "legit"
+  },
+  {
+    "text": "Subject: Urgent: Account Notification - Reset Your Password Immediately. You are required to reset your password due to a recent security audit detecting suspicious activity on your account. Please click the link below to proceed: https://example.com/reset-password",
+    "label": "phishing"
+  },
+  {
+    "text": "Dear valued employee, your password reset is pending due to suspicious activity on your account. Please click here to confirm your new password: https://example.com/reset-password",
+    "label": "phishing"
+  },
+  {
+    "text": "Subject: Urgent: Company Wide Password Reset Due to Security Breach\n\nDear Valued Employee,\n\nAs part of our ongoing efforts to maintain the highest level of security and protect your personal data, we require all employees to reset their passwords immediately. Please click the link below to reset your password: https://example.com/reset\n\nBest regards,\nThe IT Department",
+    "label": "legit"
+  },
+  {
+    "text": "Your Microsoft account has been flagged due to suspicious activity and we require you to verify your identity by clicking on this link to reset your password. Please click here to continue.",
+    "label": "phishing"
   }
 ]

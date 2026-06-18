@@ -4,14 +4,36 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description"
+        content="PhishGuard — AI-powered phishing awareness trainer. Classify realistic email scenarios, sharpen your instincts, and build safer inbox habits in under a minute." />
+    <meta name="theme-color" content="#05070e" />
     <title>PhishGuard - Email Phishing Detection</title>
     <link rel="stylesheet" href="/static/style.css" />
 </head>
 
 <body>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle light and dark theme">
+        <span class="icon-sun" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+        </span>
+        <span class="icon-moon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+        </span>
+    </button>
+
+    <canvas id="particle-canvas" aria-hidden="true"></canvas>
+
     <main class="shell">
         <header class="hero">
-            <span class="badge">Live Training</span>
+            <span class="badge" aria-label="Live training mode active">Live Training</span>
             <h1>PhishGuard</h1>
             <p>
                 Train your phishing radar with realistic scenarios. Trust your instincts,
@@ -19,48 +41,62 @@
             </p>
         </header>
 
-        <section class="board">
-            <div class="stats">
-                <div class="stat">
-                    <span id="timer-value">10s</span>
-                    <small>Time Left</small>
+        <div class="board-wrapper">
+            <section class="board" aria-label="Phishing detection training board">
+                <div class="stats">
+                    <div class="stat stat--timer">
+                        <div class="timer-ring-container">
+                            <svg class="timer-ring-svg" viewBox="0 0 64 64" aria-hidden="true">
+                                <circle class="timer-ring-bg" cx="32" cy="32" r="28" />
+                                <circle class="timer-ring-progress" id="timer-ring" cx="32" cy="32" r="28" />
+                            </svg>
+                            <span id="timer-value">10s</span>
+                        </div>
+                        <small>Time Left</small>
+                    </div>
+                    <div class="stat">
+                        <span id="score-value">0</span>
+                        <small>Correct</small>
+                    </div>
+                    <div class="stat">
+                        <span id="attempts-value">0</span>
+                        <small>Attempts</small>
+                    </div>
                 </div>
-                <div class="stat">
-                    <span id="score-value">0</span>
-                    <small>Correct</small>
+
+                <div class="email-card" id="email-box">
+                    <p id="email-content">Loading your first message...</p>
                 </div>
-                <div class="stat">
-                    <span id="attempts-value">0</span>
-                    <small>Attempts</small>
+
+                <div class="actions">
+                    <button class="button primary" id="phishing-button" type="button"
+                        aria-label="Mark as phishing">Phishing</button>
+                    <button class="button secondary" id="legit-button" type="button"
+                        aria-label="Mark as legitimate">Legitimate</button>
+                    <button class="button ghost" id="pause-button" type="button"
+                        aria-label="Pause or resume timer">Pause Timer</button>
                 </div>
-            </div>
 
-            <div class="email-card" id="email-box">
-                <p id="email-content">Loading your first message...</p>
-            </div>
-
-            <div class="actions">
-                <button class="button primary" id="phishing-button" type="button">Phishing</button>
-                <button class="button secondary" id="legit-button" type="button">Legitimate</button>
-                <button class="button ghost" id="pause-button" type="button">Pause Timer</button>
-            </div>
-
-            <div class="status" id="status" aria-live="polite">
-                Make your call: phishing or legitimate?
-            </div>
-
-            <form class="feedback" id="feedback-form">
-                <label for="feedback-text">Share feedback or suggestions</label>
-                <textarea id="feedback-text" name="feedback" maxlength="300"
-                    placeholder="Tell us what felt realistic, confusing, or helpful..."></textarea>
-                <div class="meta">
-                    <span id="feedback-counter">0 / 300</span>
-                    <button class="button ghost" id="feedback-submit" type="submit">Send Feedback</button>
+                <div class="status" id="status" aria-live="polite">
+                    Make your call: phishing or legitimate?
                 </div>
-            </form>
-        </section>
 
-        <div class="footer-note">Built for safer inbox instincts. No emails are sent or stored.</div>
+                <form class="feedback" id="feedback-form">
+                    <label for="feedback-text">Share feedback or suggestions</label>
+                    <textarea id="feedback-text" name="feedback" maxlength="300"
+                        placeholder="Tell us what felt realistic, confusing, or helpful..."></textarea>
+                    <div class="meta">
+                        <span id="feedback-counter">0 / 300</span>
+                        <button class="button ghost" id="feedback-submit" type="submit">Send Feedback</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+
+        <div class="footer-note">
+            Built for safer inbox instincts. No emails are sent or stored.
+            <span class="version-tag">v2.0</span>
+        </div>
     </main>
     <script src="/static/script.js"></script>
 </body>
