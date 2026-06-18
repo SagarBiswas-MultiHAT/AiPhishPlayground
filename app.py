@@ -274,58 +274,120 @@ def generate_ai_email(max_length, desired_label, max_attempts=3):
 
     if not gemini_client or not groq_client:
         return _single_model_fallback(
-            gemini_api_key, groq_api_key, max_length, desired_label, max_attempts
+            gemini_api_key, groq_api_key, deepseek_client, max_length, desired_label, max_attempts
         )
 
     last_error = "No consensus reached after all rounds."
+    _generators_exhausted = False  # True when quota/balance makes further rounds pointless
 
     for round_num in range(1, MAX_CONSENSUS_ROUNDS + 1):
         print(f"[Consensus] Round {round_num}/{MAX_CONSENSUS_ROUNDS} - desired label: {desired_label!r}")
 
-        # ── Step 1: Gemini generates question + answer ──────────────────────
+        # ── Step 1: Generator chain  Gemini → DeepSeek → Llama ──────────────
+        email      = None
+        gen_error  = None
+        gen_source = None
+
+        # 1a. Gemini waterfall
         try:
             email, gen_error = _gemini_generate(gemini_client, desired_label, max_length)
-        except _GeminiAuthFailed as auth_exc:
+            if email:
+                gen_source = "Gemini"
+        except _GeminiAuthFailed:
             print(f"[Consensus] FATAL: Gemini auth failed - skipping all rounds. Check your GEMINI_API_KEY.")
-            last_error = f"Gemini API key is invalid (401). Please set a valid GEMINI_API_KEY."
-            break  # exit the consensus loop immediately
+            last_error = "Gemini API key is invalid (401). Please set a valid GEMINI_API_KEY."
+            break
+
+        # 1b. Gemini quota exhausted → try DeepSeek generator
+        if email is None and gen_error and "quota exhausted" in gen_error:
+            if deepseek_client:
+                print(f"[Consensus] Round {round_num}: All Gemini quota exhausted — trying DeepSeek generator.")
+                email, ds_error = _deepseek_generate(deepseek_client, desired_label, max_length)
+                if email:
+                    gen_source = "DeepSeek"
+                else:
+                    gen_error = ds_error
+                    # 1c. DeepSeek also exhausted → try Llama as generator
+                    if ds_error and ("balance" in (ds_error or "").lower() or "quota" in (ds_error or "").lower()):
+                        print(f"[Consensus] Round {round_num}: DeepSeek exhausted — trying Llama as generator.")
+                        llama_gen, llama_gen_err = _llama_generate_fallback(groq_client, max_length, desired_label, 1)
+                        if llama_gen:
+                            email = llama_gen
+                            gen_source = "Llama"
+                            gen_error = None
+                        else:
+                            # All generators are persistently exhausted — break early
+                            _generators_exhausted = True
+                            last_error = f"All generators exhausted. Gemini: quota. DeepSeek: balance. Llama: {llama_gen_err}"
+                            break
+            else:
+                # No DeepSeek key — fall through to Llama directly
+                print(f"[Consensus] Round {round_num}: Gemini quota exhausted, no DeepSeek — trying Llama generator.")
+                llama_gen, llama_gen_err = _llama_generate_fallback(groq_client, max_length, desired_label, 1)
+                if llama_gen:
+                    email = llama_gen
+                    gen_source = "Llama"
+                    gen_error = None
+
         if email is None:
-            print(f"[Consensus] Round {round_num}: Gemini generation failed - {gen_error}")
+            print(f"[Consensus] Round {round_num}: All generators failed — {gen_error}")
             last_error = gen_error
             continue
 
-        gemini_label = email["label"]
         email_text = email["text"]
-        print(f"[Consensus] Round {round_num}: Gemini generated email, label={gemini_label!r}")
+        gen_label  = email["label"]
+        print(f"[Consensus] Round {round_num}: {gen_source} generated email, label={gen_label!r}")
 
-        # ── Step 2: Llama independently classifies the email ─────────────────
-        llama_label = _llama_classify(groq_client, email_text)
-        if llama_label is None:
-            print(f"[Consensus] Round {round_num}: Llama classification failed (network/auth error). Falling back to Gemini-only.")
-            email["_validated"] = False
+        # If Llama was the generator, skip Llama as verifier (can't verify its own output).
+        # Serve directly as unverified.
+        if gen_source == "Llama":
+            print(f"[Consensus] Round {round_num}: Llama was generator — skipping self-verification, serving unverified.")
+            email["_validated"]       = False
             email["_consensus_round"] = 0
             return email, None
 
-        print(f"[Consensus] Round {round_num}: Llama classified as {llama_label!r}")
+        # ── Step 2: Verifier chain  Llama → DeepSeek ────────────────────────
+        verifier_label = _llama_classify(groq_client, email_text)
+        if verifier_label is None:
+            # Llama verifier failed — try DeepSeek as verifier
+            if deepseek_client:
+                print(f"[Consensus] Round {round_num}: Llama verifier failed — trying DeepSeek verifier.")
+                verifier_label = _deepseek_classify(deepseek_client, email_text)
+        if verifier_label is None:
+            print(f"[Consensus] Round {round_num}: All verifiers failed — serving {gen_source} email unverified.")
+            email["_validated"]       = False
+            email["_consensus_round"] = 0
+            return email, None
+
+        print(f"[Consensus] Round {round_num}: Verifier classified as {verifier_label!r}")
 
         # ── Step 3: Check consensus ──────────────────────────────────────────
-        if llama_label == gemini_label:
-            print(f"[Consensus] Consensus reached on round {round_num} - label={gemini_label!r}")
-            email["_validated"] = True
+        if verifier_label == gen_label:
+            print(f"[Consensus] Consensus reached on round {round_num} — label={gen_label!r}")
+            email["_validated"]       = True
             email["_consensus_round"] = round_num
             return email, None
         else:
             print(
-                f"[Consensus] Round {round_num}: Disagreement - "
-                f"Gemini={gemini_label!r}, Llama={llama_label!r}. Re-running both."
+                f"[Consensus] Round {round_num}: Disagreement — "
+                f"{gen_source}={gen_label!r} vs Verifier={verifier_label!r}. Re-running."
             )
-            last_error = (
-                f"Round {round_num}: Gemini={gemini_label!r} vs Llama={llama_label!r}."
-            )
+            last_error = f"Round {round_num}: {gen_source}={gen_label!r} vs Verifier={verifier_label!r}."
 
-    # ── Consensus failed: fall back to Llama generating directly ─────────────
-    print(f"[Consensus] No consensus after {MAX_CONSENSUS_ROUNDS} rounds. Llama generating directly.")
-    return _llama_generate_fallback(groq_client, max_length, desired_label, max_attempts)
+    # ── All rounds done (or early-exit): direct fallback chain ───────────────
+    if not _generators_exhausted:
+        # Consensus never reached — try Llama directly first
+        print(f"[Consensus] No consensus after {MAX_CONSENSUS_ROUNDS} rounds. Trying Llama directly.")
+        result, err = _llama_generate_fallback(groq_client, max_length, desired_label, max_attempts)
+        if result:
+            return result, None
+        # Llama also failed — try DeepSeek as last resort
+        if deepseek_client:
+            print(f"[Consensus] Llama fallback failed. Trying DeepSeek as last-resort generator.")
+            return _deepseek_generate_fallback(deepseek_client, max_length, desired_label, max_attempts)
+        return None, err or "All AI services exhausted."
+    else:
+        return None, last_error
 
 
 def _llama_generate_fallback(groq_client, max_length, desired_label, max_attempts):
@@ -367,9 +429,12 @@ def _llama_generate_fallback(groq_client, max_length, desired_label, max_attempt
     return None, "Llama fallback also failed to generate a valid email."
 
 
-def _single_model_fallback(gemini_api_key, groq_api_key, max_length, desired_label, max_attempts):
-    """Used when only one API key is available - Gemini waterfall first, then Llama."""
-    # Try Gemini with full model waterfall (2.0-flash -> 2.5-flash -> 3.5-flash)
+def _single_model_fallback(gemini_api_key, groq_api_key, deepseek_client, max_length, desired_label, max_attempts):
+    """Used when only one API key family is available.
+
+    Generator chain: Gemini waterfall → DeepSeek → Llama (no consensus verification).
+    """
+    # 1. Try Gemini waterfall
     if genai and gemini_api_key:
         client = genai.Client(api_key=gemini_api_key)
         for _ in range(max_attempts):
@@ -382,18 +447,26 @@ def _single_model_fallback(gemini_api_key, groq_api_key, max_length, desired_lab
                     "_consensus_round": 0,
                     "_model": email.get("_model", "gemini"),
                 }, None
-            # If all Gemini models are quota-exhausted, stop retrying
             if err and "quota exhausted" in err:
-                print(f"[SingleModel] All Gemini models quota-exhausted. Falling back to Llama.")
+                print(f"[SingleModel] All Gemini models quota-exhausted.")
                 break
 
-    # Fall back to Llama if Gemini unavailable or all quota exhausted
+    # 2. Try DeepSeek
+    if deepseek_client:
+        print(f"[SingleModel] Trying DeepSeek generator.")
+        result, err = _deepseek_generate_fallback(deepseek_client, max_length, desired_label, max_attempts)
+        if result:
+            return result, None
+        print(f"[SingleModel] DeepSeek also failed ({err}). Trying Llama.")
+
+    # 3. Try Llama
     if Groq and groq_api_key:
         groq_client = Groq(api_key=groq_api_key)
-        return _llama_generate_fallback(groq_client, max_length, desired_label, max_attempts)
+        result, err = _llama_generate_fallback(groq_client, max_length, desired_label, max_attempts)
+        if result:
+            return result, None
 
-    return None, "No AI service available. Both Gemini quota is exhausted and no GROQ_API_KEY is set."
-
+    return None, "No AI service available. Set GEMINI_API_KEY, GROQ_API_KEY, or DEEPSEEK_API_KEY."
 
 def create_app():
     app = Flask(__name__, template_folder="templates", static_folder="static")
