@@ -1,20 +1,14 @@
 import json
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA_PATH = ROOT / "phishing_data.json"
 
 
 def build_client(tmp_path, monkeypatch):
-    data_path = tmp_path / "data.json"
-    data_path.write_text(
-        json.dumps([{"text": "Test message from IT support.", "label": "legitimate"}])
-    )
     feedback_dir = tmp_path / "feedback"
-
-    monkeypatch.setenv("PHISHGUARD_DATA_PATH", str(data_path))
     monkeypatch.setenv("PHISHGUARD_FEEDBACK_DIR", str(feedback_dir))
 
     if "app" in sys.modules:
@@ -36,12 +30,39 @@ def test_homepage_loads(tmp_path, monkeypatch):
 
 
 def test_get_email_returns_payload(tmp_path, monkeypatch):
+    """Verify /get-email returns a valid payload.
+
+    We mock generate_ai_email so this test works without live API keys.
+    The mock simulates a successful Gemini+Llama consensus result.
+    """
     client, _ = build_client(tmp_path, monkeypatch)
-    response = client.get("/get-email")
+    mock_email = {
+        "text": "Your account has been suspended. Click here to restore access immediately.",
+        "label": "phishing",
+        "_validated": True,
+        "_consensus_round": 1,
+    }
+    with patch("app.generate_ai_email", return_value=(mock_email, None)):
+        response = client.get("/get-email")
+
     assert response.status_code == 200
     payload = response.get_json()
     assert payload["text"]
     assert payload["label"] in {"phishing", "legitimate"}
+    # Consensus metadata must be present
+    assert "_validated" in payload
+    assert "_consensus_round" in payload
+
+
+def test_get_email_returns_503_when_ai_fails(tmp_path, monkeypatch):
+    """If all AI attempts fail, /get-email must return 503 — no silent dataset fallback."""
+    client, _ = build_client(tmp_path, monkeypatch)
+    with patch("app.generate_ai_email", return_value=(None, "AI unavailable")):
+        response = client.get("/get-email")
+
+    assert response.status_code == 503
+    payload = response.get_json()
+    assert "error" in payload
 
 
 def test_submit_feedback_persists_file(tmp_path, monkeypatch):
@@ -59,104 +80,17 @@ def test_health_endpoint(tmp_path, monkeypatch):
     assert response.get_json() == {"status": "ok"}
 
 
-# ─── Dataset Integrity Tests ──────────────────────
+def test_submit_feedback_rejects_empty(tmp_path, monkeypatch):
+    """Empty feedback must be rejected with 400."""
+    client, _ = build_client(tmp_path, monkeypatch)
+    response = client.post("/submit-feedback", json={"feedback": ""})
+    assert response.status_code == 400
 
 
-def _load_dataset():
-    """Load the production phishing_data.json file."""
-    with open(DATA_PATH, encoding="utf-8") as f:
-        return json.load(f)
+def test_submit_feedback_rejects_too_long(tmp_path, monkeypatch):
+    """Feedback exceeding the max length must be rejected with 400."""
+    client, _ = build_client(tmp_path, monkeypatch)
+    long_text = "x" * 1001
+    response = client.post("/submit-feedback", json={"feedback": long_text})
+    assert response.status_code == 400
 
-
-def test_dataset_is_valid_json():
-    """The dataset file must be parseable JSON."""
-    data = _load_dataset()
-    assert isinstance(data, list), "Dataset root must be a JSON array"
-    assert len(data) > 0, "Dataset must not be empty"
-
-
-def test_dataset_schema():
-    """Every entry must have exactly 'text' and 'label' keys."""
-    data = _load_dataset()
-    for i, entry in enumerate(data):
-        assert isinstance(entry, dict), f"Entry {i} is not a dict"
-        assert set(entry.keys()) == {"text", "label"}, (
-            f"Entry {i} has unexpected keys: {set(entry.keys())}"
-        )
-
-
-def test_dataset_labels_are_valid():
-    """Every label must be exactly 'phishing' or 'legitimate'."""
-    data = _load_dataset()
-    valid_labels = {"phishing", "legitimate"}
-    for i, entry in enumerate(data):
-        assert entry["label"] in valid_labels, (
-            f"Entry {i} has invalid label '{entry['label']}'. "
-            f"Must be one of {valid_labels}"
-        )
-
-
-def test_dataset_no_legacy_legit_label():
-    """The legacy 'legit' label must not appear anywhere in the dataset."""
-    data = _load_dataset()
-    for i, entry in enumerate(data):
-        assert entry["label"] != "legit", (
-            f"Entry {i} uses deprecated 'legit' label. Use 'legitimate' instead."
-        )
-
-
-def test_dataset_no_empty_text():
-    """Every entry must have non-empty text."""
-    data = _load_dataset()
-    for i, entry in enumerate(data):
-        text = entry.get("text", "").strip()
-        assert len(text) > 0, f"Entry {i} has empty text"
-
-
-def test_dataset_minimum_text_length():
-    """Every text must be at least 30 characters to be a meaningful example."""
-    data = _load_dataset()
-    for i, entry in enumerate(data):
-        text = entry.get("text", "").strip()
-        assert len(text) >= 30, (
-            f"Entry {i} text is too short ({len(text)} chars): '{text[:50]}...'"
-        )
-
-
-def test_dataset_no_duplicate_texts():
-    """No two entries should have exactly the same text."""
-    data = _load_dataset()
-    texts = [entry["text"].strip().lower() for entry in data]
-    seen = set()
-    for i, text in enumerate(texts):
-        assert text not in seen, (
-            f"Entry {i} is a duplicate: '{text[:60]}...'"
-        )
-        seen.add(text)
-
-
-def test_dataset_label_balance():
-    """Dataset should be roughly balanced (neither label exceeds 70% of total)."""
-    data = _load_dataset()
-    total = len(data)
-    phishing_count = sum(1 for e in data if e["label"] == "phishing")
-    legitimate_count = total - phishing_count
-
-    max_ratio = 0.70
-    assert phishing_count / total <= max_ratio, (
-        f"Phishing examples ({phishing_count}/{total}) exceed {max_ratio:.0%} threshold"
-    )
-    assert legitimate_count / total <= max_ratio, (
-        f"Legitimate examples ({legitimate_count}/{total}) exceed {max_ratio:.0%} threshold"
-    )
-
-
-def test_dataset_no_example_dot_com_in_phishing():
-    """Phishing examples should use realistic fake domains, not 'example.com'."""
-    data = _load_dataset()
-    for i, entry in enumerate(data):
-        if entry["label"] == "phishing":
-            assert "example.com" not in entry["text"].lower(), (
-                f"Phishing entry {i} uses generic 'example.com' — "
-                f"use a realistic typosquat domain instead"
-            )

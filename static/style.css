@@ -131,7 +131,7 @@
   --ghost-hover-border: rgba(0, 0, 0, 0.22);
   --ghost-hover-bg: rgba(0, 0, 0, 0.04);
   --ring-bg-stroke: rgba(0, 0, 0, 0.08);
-  --particle-color: 20, 40, 80;
+  --particle-color: 0, 100, 150; /* Darker cyan for light mode contrast */
   --scan-color: rgba(0, 100, 170, 0.04);
   --stat-line-opacity: 0.3;
 }
@@ -186,7 +186,7 @@ body::after {
     radial-gradient(ellipse 60% 40% at 80% 80%, rgba(168, 85, 247, 0.05), transparent),
     radial-gradient(ellipse 50% 50% at 50% 50%, rgba(255, 45, 170, 0.03), transparent);
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
   transition: background 0.5s ease;
 }
 
@@ -217,7 +217,7 @@ body::after {
 .shell {
   position: relative;
   z-index: 1;
-  max-width: 1160px;
+  width: 85%;
   margin: 0 auto;
   padding: 56px 24px 72px;
   display: grid;
@@ -952,6 +952,91 @@ body::after {
 /* Light mode board wrapper glow — softer */
 [data-theme="light"] .board-wrapper::before {
   opacity: 0.12;
+}
+
+/* ───────────────────────────────────────────────
+   Consensus Badge — Dual-AI Verified Indicator
+   ─────────────────────────────────────────────── */
+
+@keyframes badgeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.consensus-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px 5px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.18), rgba(0, 255, 136, 0.08));
+  border: 1px solid rgba(0, 255, 136, 0.28);
+  box-shadow: 0 0 16px rgba(0, 255, 136, 0.15), inset 0 0 8px rgba(0, 255, 136, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: badgeSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  z-index: 2;
+  cursor: default;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.consensus-badge:hover {
+  box-shadow: 0 0 24px rgba(0, 255, 136, 0.3), inset 0 0 10px rgba(0, 255, 136, 0.08);
+  border-color: rgba(0, 255, 136, 0.45);
+}
+
+.consensus-badge__icon {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--neon-green);
+  filter: drop-shadow(0 0 4px rgba(0, 255, 136, 0.6));
+  line-height: 1;
+}
+
+.consensus-badge__text {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--neon-green);
+}
+
+.consensus-badge__round {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: rgba(0, 255, 136, 0.6);
+  padding-left: 4px;
+  border-left: 1px solid rgba(0, 255, 136, 0.2);
+}
+
+/* Light-mode badge adjustments */
+[data-theme="light"] .consensus-badge {
+  background: linear-gradient(135deg, rgba(5, 150, 82, 0.14), rgba(5, 150, 82, 0.06));
+  border-color: rgba(5, 150, 82, 0.25);
+  box-shadow: 0 0 12px rgba(5, 150, 82, 0.12), inset 0 0 6px rgba(5, 150, 82, 0.04);
+}
+
+[data-theme="light"] .consensus-badge__icon,
+[data-theme="light"] .consensus-badge__text {
+  color: var(--neon-green);
+  filter: none;
+}
+
+[data-theme="light"] .consensus-badge__round {
+  color: rgba(5, 150, 82, 0.65);
+  border-left-color: rgba(5, 150, 82, 0.2);
 }
 
 /* ───────────────────────────────────────────────

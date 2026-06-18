@@ -15,6 +15,8 @@ const state = {
   retryCount: 0,
   maxRetry: 2,
   paused: false,
+  consecutiveTimeouts: 0,  // resets when user answers; increments on timeout
+  autoPaused: false,       // true after 3 consecutive timeouts
 };
 
 const elements = {};
@@ -34,9 +36,9 @@ const ParticleSystem = (() => {
   }
 
   function getParticleCount() {
-    if (window.innerWidth < 768) return 25;
-    if (window.innerWidth < 1200) return 45;
-    return 65;
+    if (window.innerWidth < 768) return 40;
+    if (window.innerWidth < 1200) return 70;
+    return 100;
   }
 
   class Particle {
@@ -49,8 +51,8 @@ const ParticleSystem = (() => {
       this.y = Math.random() * canvas.height;
       this.vx = (Math.random() - 0.5) * 0.4;
       this.vy = (Math.random() - 0.5) * 0.4;
-      this.radius = Math.random() * 1.5 + 0.5;
-      this.opacity = Math.random() * 0.5 + 0.1;
+      this.radius = Math.random() * 2.0 + 0.8;
+      this.opacity = Math.random() * 0.6 + 0.25;
     }
 
     update() {
@@ -95,12 +97,12 @@ const ParticleSystem = (() => {
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < CONNECTION_DIST) {
           const color = getParticleColor();
-          const opacity = (1 - dist / CONNECTION_DIST) * 0.15;
+          const opacity = (1 - dist / CONNECTION_DIST) * 0.35;
           ctx.beginPath();
           ctx.moveTo(particles[i].x, particles[i].y);
           ctx.lineTo(particles[j].x, particles[j].y);
           ctx.strokeStyle = `rgba(${color}, ${opacity})`;
-          ctx.lineWidth = 0.5;
+          ctx.lineWidth = 0.8;
           ctx.stroke();
         }
       }
@@ -280,7 +282,22 @@ function handleTimeout() {
   const label = state.currentEmail.label === 'legitimate' ? 'legitimate' : 'phishing';
   setStatus(`Time's up. That one was ${label}.`, 'warning');
   triggerEmailEffect('shake');
-  setTimeout(loadEmail, 1800);
+
+  state.consecutiveTimeouts += 1;
+
+  if (state.consecutiveTimeouts >= 3) {
+    // Auto-pause: user has missed 3 in a row — give them a break
+    state.autoPaused = true;
+    elements.pauseButton.textContent = 'Resume Game';
+    setTimeout(() => {
+      setStatus(
+        `You've timed out ${state.consecutiveTimeouts} times in a row. Take a breather — press "Resume Game" when ready.`,
+        'warning'
+      );
+    }, 1800);
+  } else {
+    setTimeout(loadEmail, 1800);
+  }
 }
 
 // ─── Email Card Visual Effects ──────────────────
@@ -294,13 +311,33 @@ function triggerEmailEffect(effectClass) {
   setTimeout(() => card.classList.remove(effectClass), 700);
 }
 
+// ─── Consensus Badge ─────────────────────────────
+function showVerifiedBadge(consensusRound) {
+  removeVerifiedBadge();
+  const badge = document.createElement('div');
+  badge.id = 'consensus-badge';
+  badge.className = 'consensus-badge';
+  badge.setAttribute('aria-label', `Dual-AI verified in ${consensusRound} round${consensusRound !== 1 ? 's' : ''}`);
+  badge.innerHTML =
+    `<span class="consensus-badge__icon" aria-hidden="true">✓</span>` +
+    `<span class="consensus-badge__text">Dual-AI Verified</span>` +
+    `<span class="consensus-badge__round">Round ${consensusRound}</span>`;
+  elements.emailBox.appendChild(badge);
+}
+
+function removeVerifiedBadge() {
+  const existing = document.getElementById('consensus-badge');
+  if (existing) existing.remove();
+}
+
 // ─── Load Email ─────────────────────────────────
 function loadEmail() {
   if (state.busy) {
     return;
   }
   state.busy = true;
-  setStatus('Crafting a new scenario...', 'neutral');
+  removeVerifiedBadge();
+  setStatus('AI models reaching consensus\u2026', 'neutral');
   const endpoint = '/get-email';
 
   fetch(endpoint)
@@ -318,6 +355,12 @@ function loadEmail() {
       state.currentEmail = data;
       state.answered = false;
       elements.emailContent.textContent = data.text;
+
+      // Show validated badge if consensus was reached
+      if (data._validated && data._consensus_round > 0) {
+        showVerifiedBadge(data._consensus_round);
+      }
+
       setStatus('Make your call: phishing or legitimate?', 'neutral');
       startTimer();
     })
@@ -345,6 +388,7 @@ function handleAnswer(choice) {
   state.answered = true;
   clearInterval(state.timerId);
   state.paused = false;
+  state.consecutiveTimeouts = 0;  // user engaged — reset the streak
   elements.pauseButton.textContent = 'Pause Timer';
   const isCorrect = choice === state.currentEmail.label;
   state.attempts += 1;
@@ -366,6 +410,16 @@ function handleAnswer(choice) {
 
 // ─── Pause Toggle ───────────────────────────────
 function togglePause() {
+  // If the game was auto-paused due to consecutive timeouts, treat this as a full resume
+  if (state.autoPaused) {
+    state.autoPaused = false;
+    state.consecutiveTimeouts = 0;
+    elements.pauseButton.textContent = 'Pause Timer';
+    setStatus('Back in action! Make your call.', 'neutral');
+    loadEmail();
+    return;
+  }
+
   if (!state.currentEmail || state.answered) {
     return;
   }
