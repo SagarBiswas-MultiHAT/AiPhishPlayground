@@ -1,52 +1,85 @@
+"""PhishGuard — AI-powered phishing awareness trainer.
+
+This module implements the Flask application, consensus engine, and
+background prefetch cache for the PhishGuard game.
+
+NOTE (SCALE-01): This application uses in-process global state for the
+prefetch cache and rate-limit dictionary.  It MUST run as a single worker
+process.  Running multiple workers (e.g. ``gunicorn -w 4``) will create
+independent caches and multiply API calls.  If horizontal scaling is
+required, migrate state to Redis or a similar shared store.
+"""
+
+from __future__ import annotations
+
+import html as html_module
 import json
 import os
-import random
 import re
+import secrets
 import threading
 import time
+import uuid
+from typing import Any
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request
 
 try:
-    from google import genai
-    from google.genai import types
-except Exception:
-    genai = None
+    from openai import OpenAI as _OpenAI
+except ImportError:  # REL-04: catch only ImportError, not all exceptions
+    _OpenAI = None
 
 try:
     from groq import Groq
-except Exception:
+except ImportError:  # REL-04
     Groq = None
 
-DEFAULT_MAX_FEEDBACK_LENGTH = 1000
-DEFAULT_MAX_EMAIL_LENGTH = 800  # Raised from 600 - Gemini 2.5-flash outputs ~650 chars
+# ─── Application Constants ──────────────────────────────────────────────────
+# MQ-04: All magic numbers centralised here.
+
+DEFAULT_MAX_FEEDBACK_LENGTH = 300   # MQ-05: aligned with frontend maxlength
+DEFAULT_MAX_EMAIL_LENGTH = 800
 DEFAULT_MIN_FEEDBACK_INTERVAL = 2.0
+DEFAULT_GET_EMAIL_INTERVAL = 1.5    # SEC-06: rate-limit for /get-email
+PREFETCH_WAIT_TIMEOUT = 15          # MQ-04: seconds to wait for busy prefetch
+PREFETCH_RETRY_DELAY = 0.4          # MQ-04: seconds between sync retries
+ANSWER_DELAY = 1800                 # MQ-04: ms before loading next email (frontend)
+TIMER_SECONDS = 10                  # MQ-04: game timer length
+USER_AGENT_MAX_LENGTH = 512         # SEC-10: truncation cap for stored UA
+RATE_LIMIT_TTL = 120                # REL-02: seconds before stale rate-limit entries expire
 
 # ─── Consensus Engine Constants ─────────────────────────────────────────────
 # Maximum number of rounds the two models are allowed to disagree before we
-# give up and fall back to the static dataset.  Each round = 1 Gemini call +
+# give up and fall back to the static dataset.  Each round = 1 OpenRouter call +
 # 1 Groq/Llama call, so keep this reasonable to avoid runaway API spend.
 MAX_CONSENSUS_ROUNDS = 5
 
-# ─── Gemini Model Waterfall ──────────────────────────────────────────────────
-# Models are tried in order.  When a 429 / quota error is detected the engine
-# immediately moves to the next entry instead of wasting retries.
-GEMINI_MODELS = [
-    "gemini-2.0-flash",   # Primary  - best quality
+# ─── OpenRouter Models ───────────────────────────────────────────────────────
+# We use only free models to guarantee zero cost.
+OR_GENERATOR_MODELS: list[str] = [
+    "openai/gpt-oss-120b:free",                # Primary: Massive, smart, 120B parameters
+    "nousresearch/hermes-3-llama-3.1-405b:free",  # Fallback 1: High quality 405B model
+    "meta-llama/llama-3.3-70b-instruct:free",  # Fallback 2: Proven capable generator
 ]
+
+
+# Fast 20B model for direct generation if consensus fails
+OR_FALLBACK_MODEL = "openai/gpt-oss-20b:free"
 
 # ─── Prefetch Cache ──────────────────────────────────────────────────────────
 # One email is pre-generated in the background while the user is reading the
 # current question.  When the next /get-email request arrives the cached email
 # is returned instantly, then a new background generation begins immediately.
 _prefetch_lock  = threading.Lock()
-_prefetch_cache = None   # pre-generated email dict, or None
-_prefetch_busy  = False  # True while a background thread is active
+_prefetch_cache: dict[str, Any] | None = None   # pre-generated email dict, or None
+_prefetch_busy: bool = False                    # True while a background thread is active
 
 
-def _run_prefetch(max_length):
+def _run_prefetch(max_length: int) -> None:
     """Background worker: silently generate the next email and fill the cache."""
     global _prefetch_cache, _prefetch_busy
+    import random
+
     try:
         label = random.choice(["phishing", "legitimate"])
         print(f"[Prefetch] Background generation started (label={label!r})...")
@@ -58,13 +91,13 @@ def _run_prefetch(max_length):
         else:
             print("[Prefetch] Background generation failed - cache remains empty.")
     except Exception as exc:
-        print(f"[Prefetch] Background error: {exc}")
+        print(f"[Prefetch] Background error: {_sanitize_log(exc)}")
     finally:
         with _prefetch_lock:
             _prefetch_busy = False
 
 
-def _trigger_prefetch(max_length):
+def _trigger_prefetch(max_length: int) -> None:
     """Spawn a background prefetch thread if one is not already running."""
     global _prefetch_busy
     with _prefetch_lock:
@@ -79,7 +112,7 @@ def _trigger_prefetch(max_length):
     ).start()
 
 
-def _pop_prefetch_cache():
+def _pop_prefetch_cache() -> dict[str, Any] | None:
     """Thread-safely consume and return the cached email (or None if empty)."""
     global _prefetch_cache
     with _prefetch_lock:
@@ -87,8 +120,33 @@ def _pop_prefetch_cache():
         _prefetch_cache = None
     return email
 
+
+# ─── Logging Helpers ─────────────────────────────────────────────────────────
+
+def _sanitize_log(exc: BaseException) -> str:
+    """Return a sanitised string representation of an exception.
+
+    SEC-05: Redact anything that looks like an API key to prevent leaking
+    secrets through log aggregators.
+    """
+    msg = str(exc)
+    # Redact common API key patterns
+    msg = re.sub(r"sk-or-v1-[A-Za-z0-9\-]+", "sk-or-v1-[REDACTED]", msg)
+    msg = re.sub(r"gsk_[A-Za-z0-9]+", "gsk_[REDACTED]", msg)
+    msg = re.sub(r"sk-[A-Za-z0-9]{20,}", "sk-[REDACTED]", msg)
+    return msg
+
+
+def _strip_html(text: str) -> str:
+    """Remove HTML tags from AI-generated text (SEC-08: defence-in-depth)."""
+    clean = re.sub(r"<[^>]+>", "", text)
+    return html_module.unescape(clean)
+
+
+# ─── Prompt ──────────────────────────────────────────────────────────────────
+
 # Prompt shared by both generation and classification phases
-_GENERATION_PROMPT_PARTS = [
+_GENERATION_PROMPT_PARTS: list[str] = [
     "You are generating training data for a phishing awareness quiz.",
     "Generate one realistic email or message that a real person would receive",
     "in a workplace or personal inbox.",
@@ -109,255 +167,201 @@ _GENERATION_PROMPT_PARTS = [
 ]
 
 
-def load_emails(data_path):
-    try:
-        with open(data_path, encoding="utf-8") as handle:
-            data = json.load(handle)
-            return data if isinstance(data, list) else []
-    except FileNotFoundError:
-        print("Error: phishing_data.json file not found.")
-        return []
-    except json.JSONDecodeError:
-        print("Error: Failed to parse phishing_data.json.")
-        return []
-
-
-def save_emails(data_path, updated_emails):
-    with open(data_path, "w", encoding="utf-8") as handle:
-        json.dump(updated_emails, handle, indent=2, ensure_ascii=False)
-
-
-def json_error(message, status=400):
+def json_error(message: str, status: int = 400) -> tuple[Response, int]:
+    """Return a consistent JSON error response."""
     return jsonify({"error": message}), status
 
 
-# ─── Step 1: Gemini generates the question (email) + its own answer (label) ──
-def _is_quota_error(exc):
-    """Return True if the exception is a 429 / quota-exhausted error."""
-    msg = str(exc)
-    return "429" in msg or "RESOURCE_EXHAUSTED" in msg or "quota" in msg.lower()
+# ─── OpenRouter Unified Engine ─────────────────────────────────────────────
+
+class _OpenRouterAuthFailed(Exception):
+    """Raised to immediately abort if the API key is invalid."""
 
 
-def _is_auth_error(exc):
-    """Return True if the exception is a 401 auth error (bad/expired key)."""
-    msg = str(exc)
-    return "401" in msg or "UNAUTHENTICATED" in msg or "API_KEY_INVALID" in msg
+def _make_or_client() -> Any | None:
+    """Return an OpenAI-compatible client pointed at OpenRouter."""
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key or _OpenAI is None:
+        return None
+    return _OpenAI(
+        api_key=api_key,
+        base_url="https://openrouter.ai/api/v1",
+        # Fail instantly on rate limits instead of exponential backoff
+        max_retries=0,
+    )
 
 
-class _GeminiAuthFailed(Exception):
-    """Raised to immediately abort all Gemini consensus rounds on auth failure."""
-    pass
+def _is_rate_limit(exc: BaseException) -> bool:
+    msg = str(exc).lower()
+    return "429" in msg or "rate limit" in msg or "quota" in msg
 
 
-def _gemini_generate(client, desired_label, max_length):
-    """Ask Gemini to generate a phishing/legitimate email with its label.
+def _is_auth_error(exc: BaseException) -> bool:
+    msg = str(exc).lower()
+    return "401" in msg or "unauthorized" in msg
 
-    Tries each model in GEMINI_MODELS in order.  A 429 / quota error causes
-    an immediate skip to the next model; other errors are retried once.
 
-    Returns (email_dict, None) on success or (None, error_str) on failure.
-    email_dict has the shape {"text": str, "label": str, "_model": str}.
+def _openrouter_generate(
+    client: Any, desired_label: str, max_length: int
+) -> tuple[dict[str, Any] | None, str | None]:
+    """Ask OpenRouter to generate an email using the waterfall of generator models.
+
+    Returns (email_dict, None) on success, or (None, error_str).
     """
     prompt_parts = _GENERATION_PROMPT_PARTS + [
         f"- The label must be exactly '{desired_label}'.",
     ]
     prompt = " ".join(prompt_parts)
 
-    last_error = "No Gemini models available."
+    last_error = "No models available."
 
-    for model_name in GEMINI_MODELS:
-        print(f"[Gemini] Trying model: {model_name}")
+    for model_name in OR_GENERATOR_MODELS:
+        print(f"[Generator] Trying model: {model_name}")
         try:
-            response = client.models.generate_content(
+            response = client.chat.completions.create(
                 model=model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.7,
-                ),
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=400,
             )
-            raw_text = response.text or ""
+            raw_text = (response.choices[0].message.content or "") if response.choices else ""
             match = re.search(r"\{.*\}", raw_text, re.DOTALL)
             if not match:
                 last_error = f"{model_name}: returned no JSON object."
-                continue  # try next model
+                continue
+
             email = json.loads(match.group(0))
-            text = email.get("text", "").strip()
+            text = _strip_html(email.get("text", "").strip())  # SEC-08
             label = email.get("label", "").strip().lower()
+
             if text and label == desired_label and len(text) <= max_length:
-                print(f"[Gemini] Success with {model_name}")
+                print(f"[Generator] Success with {model_name}")
                 return {"text": text, "label": label, "_model": model_name}, None
-            last_error = f"{model_name}: output failed validation (label={label!r}, len={len(text)})."
-            # Validation failure is not a quota issue — no point trying the next model
-            # for the same prompt; break and let the caller retry the whole round.
-            break
+
+            last_error = f"{model_name}: output failed validation."
+            # Failed formatting isn't a quota error, but we try the next model anyway
+            # since a different model might format it correctly.
+            continue
+
         except Exception as exc:
             if _is_auth_error(exc):
-                print(f"[Gemini] FATAL: {model_name} auth failed (bad API key) - aborting all Gemini calls.")
-                raise _GeminiAuthFailed(str(exc))
-            if _is_quota_error(exc):
-                print(f"[Gemini] {model_name} quota exhausted - trying next model.")
-                last_error = f"{model_name}: quota exhausted."
-                continue  # immediately skip to next model
-            print(f"[Gemini] {model_name} error: {exc}")
-            last_error = f"{model_name}: {exc}"
-            break  # non-quota error - stop trying Gemini models
+                print("[Generator] FATAL: Auth failed. Check OPENROUTER_API_KEY.")
+                raise _OpenRouterAuthFailed(str(exc)) from exc
+            if _is_rate_limit(exc):
+                print(f"[Generator] {model_name} rate limited - trying next model.")
+                last_error = f"{model_name} rate limited."
+                continue
+
+            print(f"[Generator] {model_name} error: {_sanitize_log(exc)}")  # SEC-05
+            last_error = f"{model_name}: {_sanitize_log(exc)}"
+            continue
 
     return None, last_error
 
 
-# ─── Step 2: Llama independently classifies the generated email ──────────────
-def _llama_classify(client, email_text):
-    """Ask Llama-3.3-70b-versatile to classify an email as phishing or legitimate.
+def _groq_classify(client: Any, email_text: str) -> str | None:
+    """Ask Groq (Llama-3.3-70b-versatile) to classify an email.
 
-    Critically, we do NOT reveal the label Gemini assigned — Llama must decide
-    on its own.  This enforces true independent verification.
-
-    Returns "phishing" | "legitimate" | None (on failure).
+    Returns 'phishing' | 'legitimate' | None.
     """
+    if not client:
+        return None
+
     classify_prompt = (
         "You are a cybersecurity expert evaluating an email for a phishing awareness quiz.\n"
         "Read the following email and decide whether it is phishing or legitimate.\n"
         "Reply with exactly ONE word — either 'phishing' or 'legitimate' — and nothing else.\n\n"
         f"Email:\n{email_text}"
     )
+
     try:
         completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": classify_prompt}],
-            temperature=0.2,       # Low temperature for deterministic classification
-            max_completion_tokens=5,
-            top_p=1,
-            stream=False,
+            temperature=0.1,
+            max_tokens=50,
         )
-        raw = completion.choices[0].message.content.strip().lower() if completion.choices else ""
-        # Accept any response that contains one of the two labels
+        raw = (
+            (completion.choices[0].message.content or "").strip().lower()
+            if completion.choices
+            else ""
+        )
         if "phishing" in raw:
+            print("[Verifier] Groq classified as phishing.")
             return "phishing"
         if "legitimate" in raw:
+            print("[Verifier] Groq classified as legitimate.")
             return "legitimate"
+
+        print(f"[Verifier] Groq returned ambiguous response: {raw!r}")
         return None
     except Exception as exc:
-        print(f"Llama classification error: {exc}")
+        print(f"[Verifier] Groq classification error: {_sanitize_log(exc)}")  # SEC-05
         return None
 
 
 # ─── Consensus Engine ────────────────────────────────────────────────────────
-def generate_ai_email(max_length, desired_label, max_attempts=3):
-    """Dual-model consensus loop.
+def generate_ai_email(
+    max_length: int, desired_label: str, max_attempts: int = 3
+) -> tuple[dict[str, Any] | None, str | None]:
+    """Dual-model consensus loop using OpenRouter.
 
     Algorithm
     ---------
-    Step 1 - Gemini generates an email and asserts a label.
-    Step 2 - Llama-3.3-70b-versatile independently classifies the same email.
+    Step 1 - Generator chain attempts to write an email.
+    Step 2 - Verifier chain independently classifies the same email.
     Step 3 - If both labels match  ->  return the email (consensus locked).
-              If they differ       ->  repeat from Step 1 (new round).
+             If they differ        ->  repeat from Step 1 (new round).
     After MAX_CONSENSUS_ROUNDS rounds without consensus  ->
-        fall back to Llama generating the question directly (no static dataset).
+        fall back to a fast direct generation.
     """
-    gemini_api_key = os.getenv("GEMINI_API_KEY")
+    client = _make_or_client()
     groq_api_key = os.getenv("GROQ_API_KEY")
 
-    if not gemini_api_key and not groq_api_key:
-        return None, "Missing GEMINI_API_KEY or GROQ_API_KEY environment variables."
+    if not client or not groq_api_key:
+        return None, "Missing OPENROUTER_API_KEY or GROQ_API_KEY environment variables."
 
-    # If only one key is available, skip consensus and generate with whatever is available.
-    if not (gemini_api_key and groq_api_key):
-        return _single_model_fallback(
-            gemini_api_key, groq_api_key, max_length, desired_label, max_attempts
-        )
-
-    gemini_client = genai.Client(api_key=gemini_api_key) if genai else None
     groq_client = Groq(api_key=groq_api_key) if Groq else None
-
-    if not gemini_client or not groq_client:
-        return _single_model_fallback(
-            gemini_api_key, groq_api_key, deepseek_client, max_length, desired_label, max_attempts
-        )
+    if not groq_client:
+        return None, "Groq package not installed."
 
     last_error = "No consensus reached after all rounds."
-    _generators_exhausted = False  # True when quota/balance makes further rounds pointless
 
     for round_num in range(1, MAX_CONSENSUS_ROUNDS + 1):
-        print(f"[Consensus] Round {round_num}/{MAX_CONSENSUS_ROUNDS} - desired label: {desired_label!r}")
+        print(
+            f"\n[Consensus] Round {round_num}/{MAX_CONSENSUS_ROUNDS}"
+            f" - desired label: {desired_label!r}"
+        )
 
-        # ── Step 1: Generator chain  Gemini → DeepSeek → Llama ──────────────
-        email      = None
-        gen_error  = None
-        gen_source = None
-
-        # 1a. Gemini waterfall
+        # ── Step 1: Generator chain ──────────────────────────────────────────
         try:
-            email, gen_error = _gemini_generate(gemini_client, desired_label, max_length)
-            if email:
-                gen_source = "Gemini"
-        except _GeminiAuthFailed:
-            print(f"[Consensus] FATAL: Gemini auth failed - skipping all rounds. Check your GEMINI_API_KEY.")
-            last_error = "Gemini API key is invalid (401). Please set a valid GEMINI_API_KEY."
-            break
-
-        # 1b. Gemini quota exhausted → try DeepSeek generator
-        if email is None and gen_error and "quota exhausted" in gen_error:
-            if deepseek_client:
-                print(f"[Consensus] Round {round_num}: All Gemini quota exhausted — trying DeepSeek generator.")
-                email, ds_error = _deepseek_generate(deepseek_client, desired_label, max_length)
-                if email:
-                    gen_source = "DeepSeek"
-                else:
-                    gen_error = ds_error
-                    # 1c. DeepSeek also exhausted → try Llama as generator
-                    if ds_error and ("balance" in (ds_error or "").lower() or "quota" in (ds_error or "").lower()):
-                        print(f"[Consensus] Round {round_num}: DeepSeek exhausted — trying Llama as generator.")
-                        llama_gen, llama_gen_err = _llama_generate_fallback(groq_client, max_length, desired_label, 1)
-                        if llama_gen:
-                            email = llama_gen
-                            gen_source = "Llama"
-                            gen_error = None
-                        else:
-                            # All generators are persistently exhausted — break early
-                            _generators_exhausted = True
-                            last_error = f"All generators exhausted. Gemini: quota. DeepSeek: balance. Llama: {llama_gen_err}"
-                            break
-            else:
-                # No DeepSeek key — fall through to Llama directly
-                print(f"[Consensus] Round {round_num}: Gemini quota exhausted, no DeepSeek — trying Llama generator.")
-                llama_gen, llama_gen_err = _llama_generate_fallback(groq_client, max_length, desired_label, 1)
-                if llama_gen:
-                    email = llama_gen
-                    gen_source = "Llama"
-                    gen_error = None
+            email, gen_error = _openrouter_generate(client, desired_label, max_length)
+        except _OpenRouterAuthFailed:
+            return None, "OpenRouter API key is invalid (401). Please check OPENROUTER_API_KEY."
 
         if email is None:
             print(f"[Consensus] Round {round_num}: All generators failed — {gen_error}")
             last_error = gen_error
+            # If all generators are rate limited, break early
+            if "rate limited" in str(gen_error).lower() or "quota" in str(gen_error).lower():
+                break
             continue
 
         email_text = email["text"]
         gen_label  = email["label"]
-        print(f"[Consensus] Round {round_num}: {gen_source} generated email, label={gen_label!r}")
+        gen_model  = email["_model"]
+        print(f"[Consensus] Round {round_num}: {gen_model} generated label={gen_label!r}")
 
-        # If Llama was the generator, skip Llama as verifier (can't verify its own output).
-        # Serve directly as unverified.
-        if gen_source == "Llama":
-            print(f"[Consensus] Round {round_num}: Llama was generator — skipping self-verification, serving unverified.")
+        # ── Step 2: Verifier chain ───────────────────────────────────────────
+        # Brief pause to avoid hammering the generator rate-limit window
+        time.sleep(0.3)
+        verifier_label = _groq_classify(groq_client, email_text)
+
+        if verifier_label is None:
+            print(f"[Consensus] Round {round_num}: All verifiers failed — serving unverified.")
             email["_validated"]       = False
             email["_consensus_round"] = 0
             return email, None
-
-        # ── Step 2: Verifier chain  Llama → DeepSeek ────────────────────────
-        verifier_label = _llama_classify(groq_client, email_text)
-        if verifier_label is None:
-            # Llama verifier failed — try DeepSeek as verifier
-            if deepseek_client:
-                print(f"[Consensus] Round {round_num}: Llama verifier failed — trying DeepSeek verifier.")
-                verifier_label = _deepseek_classify(deepseek_client, email_text)
-        if verifier_label is None:
-            print(f"[Consensus] Round {round_num}: All verifiers failed — serving {gen_source} email unverified.")
-            email["_validated"]       = False
-            email["_consensus_round"] = 0
-            return email, None
-
-        print(f"[Consensus] Round {round_num}: Verifier classified as {verifier_label!r}")
 
         # ── Step 3: Check consensus ──────────────────────────────────────────
         if verifier_label == gen_label:
@@ -367,142 +371,181 @@ def generate_ai_email(max_length, desired_label, max_attempts=3):
             return email, None
         else:
             print(
-                f"[Consensus] Round {round_num}: Disagreement — "
-                f"{gen_source}={gen_label!r} vs Verifier={verifier_label!r}. Re-running."
+                f"[Consensus] Disagreement: Gen={gen_label!r}"
+                f" vs Verifier={verifier_label!r}. Re-running."
             )
-            last_error = f"Round {round_num}: {gen_source}={gen_label!r} vs Verifier={verifier_label!r}."
+            last_error = (
+                f"Round {round_num}: Disagreement"
+                f" ({gen_label!r} vs {verifier_label!r})."
+            )
 
-    # ── All rounds done (or early-exit): direct fallback chain ───────────────
-    if not _generators_exhausted:
-        # Consensus never reached — try Llama directly first
-        print(f"[Consensus] No consensus after {MAX_CONSENSUS_ROUNDS} rounds. Trying Llama directly.")
-        result, err = _llama_generate_fallback(groq_client, max_length, desired_label, max_attempts)
-        if result:
-            return result, None
-        # Llama also failed — try DeepSeek as last resort
-        if deepseek_client:
-            print(f"[Consensus] Llama fallback failed. Trying DeepSeek as last-resort generator.")
-            return _deepseek_generate_fallback(deepseek_client, max_length, desired_label, max_attempts)
-        return None, err or "All AI services exhausted."
-    else:
-        return None, last_error
-
-
-def _llama_generate_fallback(groq_client, max_length, desired_label, max_attempts):
-    """Llama-3.3-70b-versatile generates a question directly.
-
-    Used when:
-    - Gemini is unavailable (no GEMINI_API_KEY)
-    - Consensus was never reached after MAX_CONSENSUS_ROUNDS
-    Marked as _validated=False so the frontend shows no badge.
-    """
-    prompt_parts = _GENERATION_PROMPT_PARTS + [
-        f"- The label must be exactly '{desired_label}'.",
-    ]
+    # ── All rounds done: Direct Fallback ─────────────────────────────────────
+    print(
+        f"[Consensus] No consensus after {MAX_CONSENSUS_ROUNDS}"
+        " rounds. Using fallback model directly."
+    )
+    prompt_parts = _GENERATION_PROMPT_PARTS + [f"- The label must be exactly '{desired_label}'."]
     prompt = " ".join(prompt_parts)
 
     for _ in range(max_attempts):
         try:
-            completion = groq_client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+            response = client.chat.completions.create(
+                model=OR_FALLBACK_MODEL,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.7,
-                max_completion_tokens=300,
-                top_p=1,
-                stream=False,
+                max_tokens=400,
             )
-            raw_text = completion.choices[0].message.content if completion.choices else ""
+            raw_text = response.choices[0].message.content if response.choices else ""
             match = re.search(r"\{.*\}", raw_text, re.DOTALL)
             if match:
-                email = json.loads(match.group(0))
-                text = email.get("text", "").strip()
-                label = email.get("label", "").strip().lower()
+                fb_email = json.loads(match.group(0))
+                text = _strip_html(fb_email.get("text", "").strip())  # SEC-08
+                label = fb_email.get("label", "").strip().lower()
                 if text and label == desired_label and len(text) <= max_length:
-                    print(f"[Fallback] Llama generated email directly, label={label!r}")
-                    return {"text": text, "label": label, "_validated": False, "_consensus_round": 0}, None
+                    print(f"[Fallback] Success with {OR_FALLBACK_MODEL}")
+                    return {
+                        "text": text,
+                        "label": label,
+                        "_validated": False,
+                        "_consensus_round": 0,
+                        "_model": OR_FALLBACK_MODEL,
+                    }, None
         except Exception as exc:
-            print(f"[Fallback] Llama generation error: {exc}")
-            break
+            print(f"[Fallback] Error: {_sanitize_log(exc)}")  # SEC-05
 
-    return None, "Llama fallback also failed to generate a valid email."
+    return None, last_error
 
 
-def _single_model_fallback(gemini_api_key, groq_api_key, deepseek_client, max_length, desired_label, max_attempts):
-    """Used when only one API key family is available.
+# ─── Rate Limiter with TTL Eviction ──────────────────────────────────────────
 
-    Generator chain: Gemini waterfall → DeepSeek → Llama (no consensus verification).
+class _RateLimiter:
+    """Thread-safe rate limiter with automatic TTL eviction (REL-02)."""
+
+    def __init__(self) -> None:
+        self._store: dict[str, float] = {}
+        self._lock = threading.Lock()
+        self._last_cleanup = time.time()
+
+    def is_limited(self, key: str, interval_seconds: float) -> bool:
+        """Return True if the key has been seen within the last `interval_seconds`."""
+        now = time.time()
+        with self._lock:
+            # Periodic cleanup of stale entries
+            if now - self._last_cleanup > RATE_LIMIT_TTL:
+                cutoff = now - RATE_LIMIT_TTL
+                self._store = {k: v for k, v in self._store.items() if v > cutoff}
+                self._last_cleanup = now
+
+            last = self._store.get(key, 0)
+            if now - last < interval_seconds:
+                return True
+            self._store[key] = now
+            return False
+
+
+# ─── CSRF Validation ─────────────────────────────────────────────────────────
+
+def _check_csrf(req: Any) -> str | None:
+    """Validate request origin for CSRF protection (SEC-01).
+
+    Returns an error message if the request fails validation, or None if OK.
+    Uses a combination of Origin/Referer checking and custom header requirement.
     """
-    # 1. Try Gemini waterfall
-    if genai and gemini_api_key:
-        client = genai.Client(api_key=gemini_api_key)
-        for _ in range(max_attempts):
-            email, err = _gemini_generate(client, desired_label, max_length)
-            if email:
-                return {
-                    "text": email["text"],
-                    "label": email["label"],
-                    "_validated": False,
-                    "_consensus_round": 0,
-                    "_model": email.get("_model", "gemini"),
-                }, None
-            if err and "quota exhausted" in err:
-                print(f"[SingleModel] All Gemini models quota-exhausted.")
-                break
+    # Require custom header (cannot be set by cross-origin form submissions)
+    if not req.headers.get("X-Requested-With"):
+        return "Missing required X-Requested-With header."
 
-    # 2. Try DeepSeek
-    if deepseek_client:
-        print(f"[SingleModel] Trying DeepSeek generator.")
-        result, err = _deepseek_generate_fallback(deepseek_client, max_length, desired_label, max_attempts)
-        if result:
-            return result, None
-        print(f"[SingleModel] DeepSeek also failed ({err}). Trying Llama.")
+    # Check Origin or Referer
+    origin = req.headers.get("Origin") or ""
+    referer = req.headers.get("Referer") or ""
+    host = req.host_url.rstrip("/")
 
-    # 3. Try Llama
-    if Groq and groq_api_key:
-        groq_client = Groq(api_key=groq_api_key)
-        result, err = _llama_generate_fallback(groq_client, max_length, desired_label, max_attempts)
-        if result:
-            return result, None
+    if origin:
+        if not origin.startswith(host):
+            return "Origin mismatch."
+    elif referer:
+        if not referer.startswith(host):
+            return "Referer mismatch."
+    # If neither is present, the custom header check above is sufficient
+    # (form submissions always send Referer; direct fetches from same origin are fine)
 
-    return None, "No AI service available. Set GEMINI_API_KEY, GROQ_API_KEY, or DEEPSEEK_API_KEY."
+    return None
 
-def create_app():
+
+# ─── Flask Application Factory ──────────────────────────────────────────────
+
+def create_app() -> Flask:
     app = Flask(__name__, template_folder="templates", static_folder="static")
 
-    feedback_dir = os.getenv("PHISHGUARD_FEEDBACK_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "FeedBack"))
-    max_feedback_length = int(os.getenv("PHISHGUARD_MAX_FEEDBACK", DEFAULT_MAX_FEEDBACK_LENGTH))
-    max_email_length = int(os.getenv("PHISHGUARD_MAX_EMAIL", DEFAULT_MAX_EMAIL_LENGTH))
-    min_feedback_interval = float(
-        os.getenv("PHISHGUARD_MIN_FEEDBACK_INTERVAL", DEFAULT_MIN_FEEDBACK_INTERVAL)
+    # SEC-02: Set a proper secret key for session security
+    app.secret_key = os.getenv(
+        "FLASK_SECRET_KEY",
+        secrets.token_hex(32),  # Generate a random key if not configured
     )
 
-    recent_requests = {}
+    # PERF-03: Cache static assets for 1 year (use cache-busting via query params)
+    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 31536000
 
-    def is_rate_limited(key, interval_seconds):
-        now = time.time()
-        last = recent_requests.get(key, 0)
-        if now - last < interval_seconds:
-            return True
-        recent_requests[key] = now
-        return False
+    feedback_dir: str = os.getenv(
+        "PHISHGUARD_FEEDBACK_DIR",
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "FeedBack"),
+    )
+    max_feedback_length: int = int(
+        os.getenv("PHISHGUARD_MAX_FEEDBACK", str(DEFAULT_MAX_FEEDBACK_LENGTH))
+    )
+    max_email_length: int = int(
+        os.getenv("PHISHGUARD_MAX_EMAIL", str(DEFAULT_MAX_EMAIL_LENGTH))
+    )
+    min_feedback_interval: float = float(
+        os.getenv("PHISHGUARD_MIN_FEEDBACK_INTERVAL", str(DEFAULT_MIN_FEEDBACK_INTERVAL))
+    )
+    get_email_interval: float = float(
+        os.getenv("PHISHGUARD_GET_EMAIL_INTERVAL", str(DEFAULT_GET_EMAIL_INTERVAL))
+    )
+
+    rate_limiter = _RateLimiter()
 
     @app.after_request
-    def set_security_headers(response):
+    def set_security_headers(response: Response) -> Response:
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Referrer-Policy", "no-referrer")
+        # SEC-04: Content Security Policy
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            "default-src 'self'; "
+            "script-src 'self'; "
+            "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' data:; "
+            "connect-src 'self'",
+        )
         return response
 
+    # MQ-03: Global error handler — never leak tracebacks to the client
+    @app.errorhandler(500)
+    def internal_error(e: Exception) -> tuple[Response, int]:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "An internal error occurred."}), 500
+
     @app.get("/")
-    def index():
+    def index() -> str:
         return render_template("index.html")
 
     @app.get("/health")
-    def health_check():
-        return jsonify({"status": "ok"})
+    def health_check() -> tuple[Response, int]:
+        return jsonify({"status": "ok"}), 200
 
     @app.get("/get-email")
-    def get_email():
+    def get_email() -> tuple[Response, int]:
+        import random
+
+        # SEC-06: Rate-limit email generation requests
+        requester = request.remote_addr or "unknown"
+        if rate_limiter.is_limited(f"email:{requester}", get_email_interval):
+            return json_error("Too many requests. Please wait a moment.", 429)
+
         try:
             # ── Step 1: Try to serve from the prefetch cache (instant) ────────
             email = _pop_prefetch_cache()
@@ -511,36 +554,62 @@ def create_app():
                 print("[Prefetch] Served from cache (instant response).")
             else:
                 # ── Step 2: Cache miss — generate synchronously ───────────────
-                print("[Prefetch] Cache miss — generating synchronously.")
-                desired_label = random.choice(["phishing", "legitimate"])
-                email = None
-                last_error = None
-                for _attempt in range(2):
-                    email, last_error = generate_ai_email(max_email_length, desired_label)
-                    if email:
-                        break
-                    time.sleep(0.4)
+                print("[Prefetch] Cache miss — waiting for prefetch or generating synchronously.")
+
+                # If a background prefetch is already running, wait for it instead of
+                # launching a concurrent request (which instantly triggers free-tier rate limits)
+                wait_time = 0
+                while _prefetch_busy and wait_time < PREFETCH_WAIT_TIMEOUT:
+                    time.sleep(0.5)
+                    wait_time += 0.5
+
+                # Try popping the cache again just in case the background thread finished
+                email = _pop_prefetch_cache()
+
+                if not email:
+                    desired_label = random.choice(["phishing", "legitimate"])
+                    email = None
+                    last_error = None
+                    for _attempt in range(2):
+                        email, last_error = generate_ai_email(max_email_length, desired_label)
+                        if email:
+                            break
+                        time.sleep(PREFETCH_RETRY_DELAY)
 
                 if not email:
                     _trigger_prefetch(max_email_length)  # still warm cache for next time
+                    # REL-03: fixed stale GEMINI reference
+                    fallback_msg = (
+                        "AI service unavailable."
+                        " Please set OPENROUTER_API_KEY and GROQ_API_KEY."
+                    )
                     return json_error(
-                        last_error or "AI service unavailable. Please set GEMINI_API_KEY and GROQ_API_KEY.",
+                        last_error or fallback_msg,
                         503,
                     )
 
             # ── Step 3: Immediately kick off the NEXT generation in background ─
             _trigger_prefetch(max_email_length)
 
-            return jsonify(email)
-        except Exception as e:
+            # SEC-07: Strip internal metadata before sending to client
+            email.pop("_model", None)
+
+            return jsonify(email), 200
+        except Exception:
             import traceback
             traceback.print_exc()
-            return json_error(f"Internal Error: {e}", 500)
+            # MQ-03: don't leak exception text
+            return json_error("An internal error occurred.", 500)
 
     @app.post("/submit-feedback")
-    def submit_feedback():
+    def submit_feedback() -> tuple[Response, int]:
+        # SEC-01: CSRF validation
+        csrf_error = _check_csrf(request)
+        if csrf_error:
+            return json_error(f"Request blocked: {csrf_error}", 403)
+
         requester = request.remote_addr or "unknown"
-        if is_rate_limited(f"feedback:{requester}", min_feedback_interval):
+        if rate_limiter.is_limited(f"feedback:{requester}", min_feedback_interval):
             return json_error("Please wait before submitting more feedback.", 429)
         payload = request.get_json(silent=True) or {}
         feedback_text = str(payload.get("feedback", "")).strip()
@@ -550,35 +619,53 @@ def create_app():
             return json_error("Feedback is too long.", 400)
 
         os.makedirs(feedback_dir, exist_ok=True)
-        timestamp = int(time.time())
-        feedback_file_path = os.path.join(feedback_dir, f"feedback_{timestamp}.json")
+        # SEC-03: Use UUID to prevent filename collisions and predictability
+        feedback_file_path = os.path.join(feedback_dir, f"feedback_{uuid.uuid4().hex}.json")
         with open(feedback_file_path, "w", encoding="utf-8") as handle:
             json.dump(
                 {
                     "feedback": feedback_text,
-                    "created_at": timestamp,
-                    "user_agent": request.headers.get("User-Agent", ""),
+                    "created_at": int(time.time()),
+                    # SEC-10: Truncate User-Agent to prevent disk-fill attacks
+                    "user_agent": request.headers.get("User-Agent", "")[:USER_AGENT_MAX_LENGTH],
                 },
                 handle,
                 indent=2,
                 ensure_ascii=False,
             )
-        return jsonify({"message": "Feedback submitted successfully!"})
+        return jsonify({"message": "Feedback submitted successfully!"}), 200
 
     return app
 
 
 app = create_app()
 
-# Warm the prefetch cache at startup so the very first game request is instant
-_trigger_prefetch(DEFAULT_MAX_EMAIL_LENGTH)
+# REL-01: Only warm the prefetch cache if API keys are actually configured
+if os.getenv("OPENROUTER_API_KEY") and os.getenv("GROQ_API_KEY"):
+    _trigger_prefetch(DEFAULT_MAX_EMAIL_LENGTH)
+else:
+    print("[Startup] Skipping prefetch — API keys not set.")
 
 
 if __name__ == "__main__":
     debug = os.getenv("FLASK_DEBUG", "0") == "1"
     host = os.getenv("PHISHGUARD_HOST", "127.0.0.1")
     port = int(os.getenv("PHISHGUARD_PORT", "5000"))
-    try:
-        app.run(host=host, port=port, debug=debug)
-    except Exception as exc:
-        print(f"Failed to start the server: {exc}")
+
+    # SEC-09 / PERF-01: Use waitress production server when available
+    if not debug:
+        try:
+            from waitress import serve
+
+            print(f"[Server] Starting Waitress on {host}:{port}")
+            serve(app, host=host, port=port)
+        except ImportError:
+            print("[Server] Waitress not installed — falling back to Flask dev server.")
+            print("[Server] WARNING: The Flask dev server is NOT suitable for production.")
+            app.run(host=host, port=port, debug=debug, threaded=True)
+    else:
+        print("[Server] Starting Flask dev server (debug mode).")
+        try:
+            app.run(host=host, port=port, debug=debug, threaded=True)
+        except Exception as exc:
+            print(f"Failed to start the server: {exc}")

@@ -8,6 +8,11 @@
         content="PhishGuard — AI-powered phishing awareness trainer. Classify realistic email scenarios, sharpen your instincts, and build safer inbox habits in under a minute." />
     <meta name="theme-color" content="#05070e" />
     <title>PhishGuard - Email Phishing Detection</title>
+    <!-- PERF-04: Use preconnect + stylesheet links instead of CSS @import for non-blocking font loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" />
     <link rel="stylesheet" href="/static/style.css" />
 </head>
 
@@ -83,6 +88,7 @@
 
                 <form class="feedback" id="feedback-form">
                     <label for="feedback-text">Share feedback or suggestions</label>
+                    <!-- MQ-05: maxlength aligned with backend DEFAULT_MAX_FEEDBACK_LENGTH = 300 -->
                     <textarea id="feedback-text" name="feedback" maxlength="300"
                         placeholder="Tell us what felt realistic, confusing, or helpful..."></textarea>
                     <div class="meta">
@@ -95,7 +101,7 @@
 
         <div class="footer-note">
             Built for safer inbox instincts. No emails are sent or stored.
-            <span class="version-tag">v2.0</span>
+            <span class="version-tag">v2.1</span>
         </div>
     </main>
     <script src="/static/script.js"></script>

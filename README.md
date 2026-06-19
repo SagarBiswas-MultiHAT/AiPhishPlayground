@@ -12,7 +12,7 @@
 
 </div>
 
-Welcome to **PhishGuard**! This is a fast-paced, interactive web game designed to help anyone train their instincts against email phishing attacks. 
+Welcome to **PhishGuard**! This is a fast-paced, interactive web game designed to help anyone train their instincts against email phishing attacks.
 
 Instead of sitting through boring cybersecurity slideshows, PhishGuard throws you right into the deep end: you are shown realistic, AI-generated emails and you have **10 seconds** to decide if it's a safe message or a dangerous scam.
 
@@ -30,9 +30,9 @@ Phishing is a type of online scam where criminals send fake emails to trick you 
 
 ## ✨ Key Features
 
-* **Real-time AI Generation:** Every email you see is uniquely generated on the spot by powerful Artificial Intelligence (AI). You'll never see the exact same scam twice!
+* **Real-time AI Generation:** Every email you see is uniquely generated on the spot by powerful AI. You'll never see the exact same scam twice!
 * **High-Stakes Timer:** You only get 10 seconds to make a call. This trains you to spot red flags quickly. Need a break? Just hit the "Pause Timer" button.
-* **Dual-AI Verification:** To make sure the game is always accurate, we use two separate AI brains. One creates the email, and the second one verifies it. You'll see a "Dual-AI Verified" badge when they both agree!
+* **Dual-AI Verification:** To make sure the game is always accurate, we use two separate AI models. One creates the email, and the second one independently verifies it. You'll see a "Dual-AI Verified" badge when they both agree!
 * **Track Your Instincts:** Keep an eye on your live score and attempt tracker to see how your phishing radar improves over time.
 * **Beautiful 2050 Cyberpunk Design:** A sleek, futuristic interface featuring dynamic particle networks, smooth animations, and automatic Light/Dark mode support.
 
@@ -48,51 +48,55 @@ Phishing is a type of online scam where criminals send fake emails to trick you 
 
 ## ⚙️ How to Run PhishGuard on Your Computer
 
-While PhishGuard uses advanced AI under the hood, getting it running on your own computer is surprisingly simple. You just need Python installed, and a free API key (like a password) to talk to the AI.
+Getting PhishGuard running locally is simple. You need Python and a single, **completely free** API key from OpenRouter.
 
 ### 1. What You Need
-* **Python**: You need Python installed on your computer. If you don't have it, you can download it from [python.org](https://www.python.org/downloads/).
-* **An AI Key**: PhishGuard uses Google's AI (Gemini) to write the emails. You need a free key from [Google AI Studio](https://aistudio.google.com/apikey).
+* **Python 3.11+**: Download from [python.org](https://www.python.org/downloads/).
+* **A Free OpenRouter Key**: Used to generate emails via a 120B parameter AI. Get yours at [openrouter.ai/keys](https://openrouter.ai/keys) — no credit card required.
+* **A Free Groq Key**: Used to instantly verify emails. Get yours at [console.groq.com/keys](https://console.groq.com/keys) — no credit card required.
 
 ### 2. Simple Setup
-Open your computer's terminal (Command Prompt or PowerShell) and run these commands to download the project's requirements:
+Open PowerShell in the project folder and run:
 
 ```powershell
-# 1. Create a virtual environment (a safe folder for the project)
+# 1. Create a virtual environment
 python -m venv .venv
 
-# 2. Activate the folder
+# 2. Activate it
 & ".venv/Scripts/Activate.ps1"
 
-# 3. Install the required files
+# 3. Install dependencies
 pip install -r requirements.txt
 pip install -r requirements-ai.txt
 ```
 
 ### 3. Start the Game!
-We've included a simple startup script to make playing easy. 
 
-1. Open the `start.ps1` file in any text editor (like Notepad).
-2. Paste your Google Gemini API key where it says `$env:GEMINI_API_KEY = "your_key_here"`.
-3. Save the file.
-4. Run the script in your terminal:
+Set your API keys and launch the server:
+
 ```powershell
+$env:OPENROUTER_API_KEY = "sk-or-v1-your-key-here"
+$env:GROQ_API_KEY = "gsk_your-key-here"
 .\start.ps1
 ```
 
-Finally, open your favorite web browser and go to: **http://127.0.0.1:5000**
+Then open your browser and go to: **http://127.0.0.1:5000**
 
 ---
 
 ## 🧠 Behind the Scenes: The Consensus Engine
 
-For the curious minds, here is how PhishGuard ensures the emails are high quality:
-Instead of relying on a single AI, PhishGuard uses a "Consensus Engine." 
-1. **The Writer (Google Gemini)** is asked to write either a safe email or a scam email.
-2. **The Reviewer (Llama 3)** is then shown the email (without knowing what Gemini was asked to do) and is asked to grade it.
-3. If both AI models agree on what the email is, the game serves it to you! If they disagree, the system silently throws it away and generates a new one. 
+For the curious minds, here is how PhishGuard ensures the emails are always high quality and correctly labeled:
 
-*Note: If you have a slow network or don't have a second API key setup, PhishGuard is smart enough to automatically fallback to using just Gemini so your game never crashes!*
+Instead of relying on a single AI, PhishGuard uses a **hybrid Consensus Engine**:
+
+1. **The Writer** — `openai/gpt-oss-120b:free` via OpenRouter is asked to write either a safe email or a phishing scam.
+2. **The Reviewer** — `llama-3.3-70b-versatile` via Groq is then shown the same email — without knowing the intended label — and classifies it independently.
+3. If both AI models agree on the label, the email is served to you with a **✅ Dual-AI Verified** badge.
+4. If they disagree, the system silently discards it and generates a fresh one (up to 5 rounds).
+5. If consensus still fails, a fast fallback model generates directly so the game is never interrupted.
+
+The generator uses OpenRouter's massive free model library, while the verifier uses Groq's dedicated GPU hardware for instant, rate-limit-free classification.
 
 ---
 

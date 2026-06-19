@@ -1,0 +1,15 @@
+[Unit]
+Description=Waitress instance to serve PhishGuard
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/phishguard
+Environment="PATH=/var/www/phishguard/.venv/bin"
+EnvironmentFile=/var/www/phishguard/.env
+ExecStart=/var/www/phishguard/.venv/bin/waitress-serve --port=5000 app:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

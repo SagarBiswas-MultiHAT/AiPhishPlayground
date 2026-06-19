@@ -11,26 +11,26 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.11]
+        python-version: ["3.11"]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Lint (ruff)
-        run: |
-          if command -v ruff >/dev/null 2>&1; then ruff check .; else echo "ruff not installed"; fi
+        run: ruff check .
 
       - name: Run tests
-        run: |
-          if [ -f pyproject.toml ] || [ -d tests ]; then pytest -q || true; else echo "no tests"; fi
+        run: pytest -q

@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════
    PhishGuard — Neural Threat Console
-   Script v2.0 — Particle system + Timer ring + Game logic
+   Script v2.1 — Particle system + Timer ring + Game logic
    ═══════════════════════════════════════════════ */
 
 // ─── Game State ─────────────────────────────────
@@ -30,9 +30,16 @@ const ParticleSystem = (() => {
   const CONNECTION_DIST = 140;
   const MOUSE_RADIUS = 180;
 
-  function getParticleColor() {
+  // PERF-02: Cache particle color per-frame instead of per-particle/draw call
+  let _cachedColor = '0, 240, 255';
+
+  function refreshParticleColor() {
     const raw = getComputedStyle(document.documentElement).getPropertyValue('--particle-color').trim();
-    return raw || '0, 240, 255';
+    _cachedColor = raw || '0, 240, 255';
+  }
+
+  function getParticleColor() {
+    return _cachedColor;
   }
 
   function getParticleCount() {
@@ -90,13 +97,13 @@ const ParticleSystem = (() => {
   }
 
   function drawConnections() {
+    const color = getParticleColor();
     for (let i = 0; i < particles.length; i++) {
       for (let j = i + 1; j < particles.length; j++) {
         const dx = particles[i].x - particles[j].x;
         const dy = particles[i].y - particles[j].y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < CONNECTION_DIST) {
-          const color = getParticleColor();
           const opacity = (1 - dist / CONNECTION_DIST) * 0.35;
           ctx.beginPath();
           ctx.moveTo(particles[i].x, particles[i].y);
@@ -110,6 +117,9 @@ const ParticleSystem = (() => {
   }
 
   function animate() {
+    // PERF-02: Refresh the cached color once per frame
+    refreshParticleColor();
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     particles.forEach((p) => {
       p.update();
@@ -340,7 +350,12 @@ function loadEmail() {
   setStatus('AI models reaching consensus\u2026', 'neutral');
   const endpoint = '/get-email';
 
-  fetch(endpoint)
+  fetch(endpoint, {
+    headers: {
+      // SEC-01: Custom header for CSRF protection (cannot be set by cross-origin form submissions)
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+  })
     .then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -448,6 +463,8 @@ function submitFeedback(event) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      // SEC-01: Custom header for CSRF protection
+      'X-Requested-With': 'XMLHttpRequest',
     },
     body: JSON.stringify({ feedback: feedbackText }),
   })
