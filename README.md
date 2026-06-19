@@ -3,7 +3,7 @@
 <div align="center">
 
 <!-- CI/CD & Code Quality -->
-[![Build Status](https://img.shields.io/github/actions/workflow/status/SagarBiswas-MultiHAT/Ai-Phishy-Playground/get-started-with-github-actions.yml?branch=main&label=CI%20Build&style=flat-square)](https://github.com/SagarBiswas-MultiHAT/Ai-Phishy-Playground/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/SagarBiswas-MultiHAT/Ai-Phishy-Playground/ci.yml?branch=main&label=CI%20Build&style=flat-square)](https://github.com/SagarBiswas-MultiHAT/Ai-Phishy-Playground/actions)
 [![Python Version](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square&logo=python)](https://www.python.org/)
 [![Code Style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=flat-square)](https://github.com/astral-sh/ruff)
 
