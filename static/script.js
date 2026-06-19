@@ -322,15 +322,29 @@ function triggerEmailEffect(effectClass) {
 }
 
 // ─── Consensus Badge ─────────────────────────────
-function showVerifiedBadge(consensusRound) {
+function showVerifiedBadge(consensusRound, qualityScore) {
   removeVerifiedBadge();
   const badge = document.createElement('div');
   badge.id = 'consensus-badge';
   badge.className = 'consensus-badge';
-  badge.setAttribute('aria-label', `Dual-AI verified in ${consensusRound} round${consensusRound !== 1 ? 's' : ''}`);
+
+  let qualityLabel = 'Dual-AI Verified';
+  let qualityIcon = '✓';
+
+  if (qualityScore >= 5) {
+    qualityLabel = 'Elite Scenario';
+    qualityIcon = '🔥';
+    badge.classList.add('quality-elite');
+  } else if (qualityScore >= 4) {
+    qualityLabel = 'Creative';
+    qualityIcon = '✨';
+    badge.classList.add('quality-creative');
+  }
+
+  badge.setAttribute('aria-label', `${qualityLabel} — verified in ${consensusRound} round${consensusRound !== 1 ? 's' : ''}`);
   badge.innerHTML =
-    `<span class="consensus-badge__icon" aria-hidden="true">✓</span>` +
-    `<span class="consensus-badge__text">Dual-AI Verified</span>` +
+    `<span class="consensus-badge__icon" aria-hidden="true">${qualityIcon}</span>` +
+    `<span class="consensus-badge__text">${qualityLabel}</span>` +
     `<span class="consensus-badge__round">Round ${consensusRound}</span>`;
   elements.emailBox.appendChild(badge);
 }
@@ -373,7 +387,7 @@ function loadEmail() {
 
       // Show validated badge if consensus was reached
       if (data._validated && data._consensus_round > 0) {
-        showVerifiedBadge(data._consensus_round);
+        showVerifiedBadge(data._consensus_round, data._quality_score || 0);
       }
 
       setStatus('Make your call: phishing or legitimate?', 'neutral');

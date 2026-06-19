@@ -1,14 +1,19 @@
 # 🛡️ PhishGuard: Your Personal Phishing Radar Trainer
 
-<div align="right">
+<div align="center">
 
-[![CI](https://img.shields.io/github/actions/workflow/status/SagarBiswas-MultiHAT/Ai-Phishy-Playground/get-started-with-github-actions.yml?branch=main)](https://github.com/SagarBiswas-MultiHAT/Ai-Phishy-Playground/actions)
-&nbsp;
-![Tests](https://img.shields.io/badge/tests-pytest-brightgreen)
-&nbsp;
-![Python](https://img.shields.io/badge/python-3.11%2B-blue)
-&nbsp;
-![License](https://img.shields.io/github/license/SagarBiswas-MultiHAT/Ai-Phishy-Playground)
+<!-- CI/CD & Code Quality -->
+[![Build Status](https://img.shields.io/github/actions/workflow/status/SagarBiswas-MultiHAT/Ai-Phishy-Playground/get-started-with-github-actions.yml?branch=main&label=CI%20Build&style=flat-square)](https://github.com/SagarBiswas-MultiHAT/Ai-Phishy-Playground/actions)
+[![Python Version](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square&logo=python)](https://www.python.org/)
+[![Code Style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=flat-square)](https://github.com/astral-sh/ruff)
+
+<!-- Tech Stack -->
+[![Powered by OpenRouter](https://img.shields.io/badge/AI-OpenRouter-white?style=flat-square&logo=openai&logoColor=black)](https://openrouter.ai)
+[![Powered by Groq](https://img.shields.io/badge/Verified_by-Groq-f55036?style=flat-square)](https://groq.com)
+
+<!-- Deployment & Licensing -->
+[![Live Deployment](https://img.shields.io/website?url=https%3A%2F%2Fphishguard.multihat.dev&up_message=online&down_message=offline&style=flat-square&label=PhishGuard%20Live)](https://phishguard.multihat.dev)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
 </div>
 

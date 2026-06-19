@@ -66,6 +66,118 @@ OR_GENERATOR_MODELS: list[str] = [
 # Fast 20B model for direct generation if consensus fails
 OR_FALLBACK_MODEL = "openai/gpt-oss-20b:free"
 
+# ─── Scenario Taxonomy ──────────────────────────────────────────────────────
+# Curated, real-world-inspired scenario archetypes to drive creative generation.
+# The engine picks one at random (excluding recent history) for each email.
+
+PHISHING_SCENARIOS: list[str] = [
+    # Social Engineering & Impersonation
+    "CEO fraud — urgent wire transfer request from a spoofed executive",
+    "IT helpdesk impersonation with a fake password reset portal",
+    "HR benefits enrollment deadline with a credential-harvesting form",
+    "Vendor invoice with subtly altered bank account details",
+    "Board member requesting confidential financial documents",
+    # Emerging / Novel Threats
+    "AI-generated voice message transcript with a callback phishing number",
+    "QR code in an email leading to a credential harvesting page",
+    "Calendar invite with a malicious meeting link",
+    "Fake shipping notification from a courier with a tracking portal",
+    "Charity donation request exploiting a recent natural disaster",
+    "Job offer from a recruiter at a real company with a fake onboarding portal",
+    "Tax refund notification from a spoofed government agency",
+    "Cloud storage sharing notification with a lookalike domain",
+    "Multi-factor authentication verify-your-identity push prompt",
+    "Fake security alert — new device logged into your account",
+    # Platform-Specific
+    "Microsoft Teams message notification with an external login link",
+    "Slack workspace invitation from a spoofed colleague",
+    "LinkedIn connection request leading to a phishing profile",
+    "PayPal dispute resolution requiring immediate login",
+    "GitHub repository access notification with a malicious OAuth app",
+    # Emotional Manipulation
+    "Prize notification — you have been selected lottery scam",
+    "Threatening legal action email demanding immediate payment",
+    "Fake customer complaint threatening a public review unless refunded",
+    "Subscription cancellation confirmation you did not initiate",
+    # Supply Chain / B2B
+    "Compromised vendor email chain with an updated payment link",
+    "DMARC/SPF failure notice from a spoofed email security vendor",
+    "SaaS trial expiration with a malicious renewal link",
+    "Fake NDA or contract from a new business partner",
+    "Software license audit notification requiring credential verification",
+    "Fake two-factor backup codes email from a spoofed cloud provider",
+]
+
+LEGITIMATE_SCENARIOS: list[str] = [
+    "Internal team standup recap with action items",
+    "Manager sharing quarterly OKR progress with the team",
+    "IT announcing scheduled maintenance downtime this weekend",
+    "HR sharing open enrollment dates with a link to the real benefits portal",
+    "Finance sending a budget approval confirmation with no action required",
+    "Colleague forwarding meeting notes from a client call",
+    "Automated CI/CD pipeline success notification",
+    "Customer success team sharing a positive client testimonial",
+    "Facilities notifying about office temperature adjustments",
+    "Security team sharing a monthly phishing awareness tip",
+    "Project manager sharing sprint retrospective highlights",
+    "CEO quarterly all-hands recap email with no links and no asks",
+    "Travel booking confirmation from a known corporate travel portal",
+    "Peer recognition email from the company kudos platform",
+    "Automated calendar reminder for a recurring one-on-one meeting",
+]
+
+# ─── Scenario Rotation & Deduplication ───────────────────────────────────────
+_SCENARIO_HISTORY_SIZE = 10          # Remember last N scenarios to prevent repeats
+_RECENT_TEXT_BUFFER_SIZE = 10        # Remember last N email texts for similarity guard
+_SIMILARITY_THRESHOLD = 0.55        # Keyword overlap ratio to reject as duplicate
+_MIN_QUALITY_SCORE = 3              # Minimum verifier quality score to accept
+
+# Protected by _prefetch_lock
+_recent_scenarios: list[str] = []
+_recent_texts: list[str] = []
+
+
+def _pick_scenario(desired_label: str) -> str:
+    """Pick a random scenario from the taxonomy, avoiding recent repeats."""
+    import random
+    pool = PHISHING_SCENARIOS if desired_label == "phishing" else LEGITIMATE_SCENARIOS
+    with _prefetch_lock:
+        available = [s for s in pool if s not in _recent_scenarios]
+    if not available:
+        # All scenarios used recently — reset and pick from full pool
+        available = pool
+    choice = random.choice(available)
+    with _prefetch_lock:
+        _recent_scenarios.append(choice)
+        if len(_recent_scenarios) > _SCENARIO_HISTORY_SIZE:
+            _recent_scenarios.pop(0)
+    return choice
+
+
+def _is_too_similar(new_text: str, threshold: float = _SIMILARITY_THRESHOLD) -> bool:
+    """Check if new_text shares too many keywords with any recently served text."""
+    new_words = set(new_text.lower().split())
+    if not new_words:
+        return False
+    with _prefetch_lock:
+        recent = list(_recent_texts)
+    for prev in recent:
+        prev_words = set(prev.lower().split())
+        if not prev_words:
+            continue
+        overlap = len(new_words & prev_words) / min(len(new_words), len(prev_words))
+        if overlap > threshold:
+            return True
+    return False
+
+
+def _record_served_text(text: str) -> None:
+    """Add a served email text to the recent buffer for deduplication."""
+    with _prefetch_lock:
+        _recent_texts.append(text)
+        if len(_recent_texts) > _RECENT_TEXT_BUFFER_SIZE:
+            _recent_texts.pop(0)
+
 # ─── Prefetch Cache ──────────────────────────────────────────────────────────
 # One email is pre-generated in the background while the user is reading the
 # current question.  When the next /get-email request arrives the cached email
@@ -145,23 +257,63 @@ def _strip_html(text: str) -> str:
 
 # ─── Prompt ──────────────────────────────────────────────────────────────────
 
-# Prompt shared by both generation and classification phases
-_GENERATION_PROMPT_PARTS: list[str] = [
+
+def _build_generation_prompt(desired_label: str, scenario_hint: str) -> str:
+    """Build a dynamic, creativity-driven prompt for email generation."""
+    parts: list[str] = [
+        "You are generating training data for a phishing awareness quiz.",
+        "Generate one realistic email or message that a real person would receive",
+        "in a workplace or personal inbox.",
+        "",
+        "CREATIVITY RULES (CRITICAL):",
+        "- Generate a NOVEL, CREATIVE scenario that feels like it emerged from a real inbox today.",
+        "- Use specific, believable details: real-sounding but fake names, plausible dates,",
+        "  department names, realistic ticket or reference numbers, and internal system names.",
+        "- DO NOT use generic phishing cliches like 'Dear User' or 'click here immediately'.",
+        "- DO NOT use 'example.com'. Invent realistic-looking but clearly fictional domains.",
+        "- Write as if you are a real person — include natural language quirks, partial sentences,",
+        "  or casual tone variations that make the email feel human-authored.",
+        "- Vary the emotional register: some emails should be casual, some formal,",
+        "  some urgent but not panicked.",
+        "",
+        f"SCENARIO DIRECTIVE: {scenario_hint}",
+        "",
+        "FORMAT RULES:",
+    ]
+
+    if desired_label == "phishing":
+        parts.extend([
+            "- Include at least one subtle red flag (urgency, spoofed domain,",
+            "  credential request, authority impersonation, emotional manipulation,",
+            "  or too-good-to-be-true offer).",
+        ])
+    else:
+        parts.extend([
+            "- Write a genuinely safe internal or business email with no suspicious elements.",
+            "  Reference plausible internal systems, named colleagues, or specific dates.",
+            "  Do NOT ask for credentials or passwords.",
+        ])
+
+    parts.extend([
+        "- Format: 3-6 sentences. Include a subject line for roughly half of messages.",
+        "  If you include a subject line, separate it from the body with a double newline.",
+        f"- The label must be exactly '{desired_label}'.",
+        "- Return ONLY a JSON object with keys 'text' and 'label'.",
+        "  No markdown, no extra keys, no explanation.",
+    ])
+
+    return "\n".join(parts)
+
+
+# Kept for the fallback path which does not use scenario hints
+_FALLBACK_PROMPT_PARTS: list[str] = [
     "You are generating training data for a phishing awareness quiz.",
-    "Generate one realistic email or message that a real person would receive",
-    "in a workplace or personal inbox.",
+    "Generate one realistic, creative, and novel email or message.",
     "Rules:",
-    "- If label is 'phishing': Include at least one subtle red flag",
-    "(urgency, spoofed domain, credential request, authority impersonation,",
-    "emotional manipulation, or too-good-to-be-true offer).",
+    "- If label is 'phishing': Include at least one subtle red flag.",
     "Use realistic-looking but clearly fake domains. Do NOT use 'example.com'.",
-    "- If label is 'legitimate': Write a genuinely safe internal or business email",
-    "with no suspicious elements. Reference plausible internal systems,",
-    "named colleagues, or specific dates. Do NOT ask for credentials or passwords.",
-    "- Format: 3-6 sentences. Include a subject line for roughly half of messages.",
-    "If you include a subject line, separate it from the body with a double newline (\\n\\n).",
-    "- Vary the sender persona: IT, HR, Finance, Manager, External vendor,",
-    "Shipping company, Bank, Social media platform, etc.",
+    "- If label is 'legitimate': Write a genuinely safe email with no suspicious elements.",
+    "- Format: 3-6 sentences. Vary tone, persona, and scenario.",
     "- Return ONLY a JSON object with keys 'text' and 'label'.",
     "No markdown, no extra keys, no explanation.",
 ]
@@ -202,16 +354,19 @@ def _is_auth_error(exc: BaseException) -> bool:
 
 
 def _openrouter_generate(
-    client: Any, desired_label: str, max_length: int
+    client: Any, desired_label: str, max_length: int,
+    scenario_hint: str = "",
 ) -> tuple[dict[str, Any] | None, str | None]:
     """Ask OpenRouter to generate an email using the waterfall of generator models.
 
     Returns (email_dict, None) on success, or (None, error_str).
     """
-    prompt_parts = _GENERATION_PROMPT_PARTS + [
-        f"- The label must be exactly '{desired_label}'.",
-    ]
-    prompt = " ".join(prompt_parts)
+    if scenario_hint:
+        prompt = _build_generation_prompt(desired_label, scenario_hint)
+    else:
+        prompt = " ".join(_FALLBACK_PROMPT_PARTS + [
+            f"- The label must be exactly '{desired_label}'.",
+        ])
 
     last_error = "No models available."
 
@@ -221,7 +376,7 @@ def _openrouter_generate(
             response = client.chat.completions.create(
                 model=model_name,
                 messages=[{"role": "user", "content": prompt}],
-                temperature=0.7,
+                temperature=0.85,
                 max_tokens=400,
             )
             raw_text = (response.choices[0].message.content or "") if response.choices else ""
@@ -239,8 +394,6 @@ def _openrouter_generate(
                 return {"text": text, "label": label, "_model": model_name}, None
 
             last_error = f"{model_name}: output failed validation."
-            # Failed formatting isn't a quota error, but we try the next model anyway
-            # since a different model might format it correctly.
             continue
 
         except Exception as exc:
@@ -259,18 +412,28 @@ def _openrouter_generate(
     return None, last_error
 
 
-def _groq_classify(client: Any, email_text: str) -> str | None:
-    """Ask Groq (Llama-3.3-70b-versatile) to classify an email.
+def _groq_classify(client: Any, email_text: str) -> tuple[str | None, int]:
+    """Ask Groq (Llama-3.3-70b-versatile) to classify and score an email.
 
-    Returns 'phishing' | 'legitimate' | None.
+    Returns (label, quality_score) where label is 'phishing' | 'legitimate' | None
+    and quality_score is 1-5 (0 if parsing fails).
     """
     if not client:
-        return None
+        return None, 0
 
     classify_prompt = (
         "You are a cybersecurity expert evaluating an email for a phishing awareness quiz.\n"
-        "Read the following email and decide whether it is phishing or legitimate.\n"
-        "Reply with exactly ONE word — either 'phishing' or 'legitimate' — and nothing else.\n\n"
+        "Evaluate the following email on TWO dimensions:\n"
+        "1. CLASSIFICATION: Is this email 'phishing' or 'legitimate'?\n"
+        "2. QUALITY SCORE (1-5): How creative, realistic, and unique is this email?\n"
+        "   5 = Extremely realistic, novel scenario, would fool experts\n"
+        "   4 = Very convincing, creative approach\n"
+        "   3 = Decent but uses common patterns\n"
+        "   2 = Generic and formulaic\n"
+        "   1 = Obviously fake, unrealistic\n\n"
+        "Reply with EXACTLY this format on a single line: <label> <score>\n"
+        "Example: phishing 4\n"
+        "Example: legitimate 5\n\n"
         f"Email:\n{email_text}"
     )
 
@@ -286,33 +449,44 @@ def _groq_classify(client: Any, email_text: str) -> str | None:
             if completion.choices
             else ""
         )
+
+        # Parse quality score from response like "phishing 4" or "legitimate 5"
+        score = 0
+        score_match = re.search(r'(\d)', raw)
+        if score_match:
+            parsed = int(score_match.group(1))
+            if 1 <= parsed <= 5:
+                score = parsed
+
         if "phishing" in raw:
-            print("[Verifier] Groq classified as phishing.")
-            return "phishing"
+            print(f"[Verifier] Groq classified as phishing (quality={score}).")
+            return "phishing", score
         if "legitimate" in raw:
-            print("[Verifier] Groq classified as legitimate.")
-            return "legitimate"
+            print(f"[Verifier] Groq classified as legitimate (quality={score}).")
+            return "legitimate", score
 
         print(f"[Verifier] Groq returned ambiguous response: {raw!r}")
-        return None
+        return None, 0
     except Exception as exc:
         print(f"[Verifier] Groq classification error: {_sanitize_log(exc)}")  # SEC-05
-        return None
+        return None, 0
 
 
 # ─── Consensus Engine ────────────────────────────────────────────────────────
 def generate_ai_email(
     max_length: int, desired_label: str, max_attempts: int = 3
 ) -> tuple[dict[str, Any] | None, str | None]:
-    """Dual-model consensus loop using OpenRouter.
+    """Dual-model consensus loop with creativity scoring and deduplication.
 
     Algorithm
     ---------
-    Step 1 - Generator chain attempts to write an email.
-    Step 2 - Verifier chain independently classifies the same email.
-    Step 3 - If both labels match  ->  return the email (consensus locked).
-             If they differ        ->  repeat from Step 1 (new round).
-    After MAX_CONSENSUS_ROUNDS rounds without consensus  ->
+    Step 0 - Pick a creative scenario from the taxonomy (with rotation).
+    Step 1 - Generator chain attempts to write an email using the scenario hint.
+    Step 1b- Reject if too similar to recently served content.
+    Step 2 - Verifier chain independently classifies AND scores the email.
+    Step 3 - If labels match AND quality >= threshold -> return (consensus locked).
+             If quality too low or labels disagree -> repeat from Step 1.
+    After MAX_CONSENSUS_ROUNDS rounds without consensus ->
         fall back to a fast direct generation.
     """
     client = _make_or_client()
@@ -328,21 +502,25 @@ def generate_ai_email(
     last_error = "No consensus reached after all rounds."
 
     for round_num in range(1, MAX_CONSENSUS_ROUNDS + 1):
+        # ── Step 0: Pick a creative scenario ─────────────────────────────────
+        scenario_hint = _pick_scenario(desired_label)
         print(
             f"\n[Consensus] Round {round_num}/{MAX_CONSENSUS_ROUNDS}"
             f" - desired label: {desired_label!r}"
+            f" - scenario: {scenario_hint!r}"
         )
 
         # ── Step 1: Generator chain ──────────────────────────────────────────
         try:
-            email, gen_error = _openrouter_generate(client, desired_label, max_length)
+            email, gen_error = _openrouter_generate(
+                client, desired_label, max_length, scenario_hint=scenario_hint,
+            )
         except _OpenRouterAuthFailed:
             return None, "OpenRouter API key is invalid (401). Please check OPENROUTER_API_KEY."
 
         if email is None:
             print(f"[Consensus] Round {round_num}: All generators failed — {gen_error}")
             last_error = gen_error
-            # If all generators are rate limited, break early
             if "rate limited" in str(gen_error).lower() or "quota" in str(gen_error).lower():
                 break
             continue
@@ -352,22 +530,44 @@ def generate_ai_email(
         gen_model  = email["_model"]
         print(f"[Consensus] Round {round_num}: {gen_model} generated label={gen_label!r}")
 
-        # ── Step 2: Verifier chain ───────────────────────────────────────────
-        # Brief pause to avoid hammering the generator rate-limit window
+        # ── Step 1b: Similarity deduplication ────────────────────────────────
+        if _is_too_similar(email_text):
+            print(f"[Consensus] Round {round_num}: Content too similar to recent — regenerating.")
+            last_error = f"Round {round_num}: Duplicate content rejected."
+            continue
+
+        # ── Step 2: Verifier chain (classify + quality score) ────────────────
         time.sleep(0.3)
-        verifier_label = _groq_classify(groq_client, email_text)
+        verifier_label, quality_score = _groq_classify(groq_client, email_text)
 
         if verifier_label is None:
             print(f"[Consensus] Round {round_num}: All verifiers failed — serving unverified.")
             email["_validated"]       = False
             email["_consensus_round"] = 0
+            email["_quality_score"]   = 0
+            email["_scenario_type"]   = scenario_hint
+            _record_served_text(email_text)
             return email, None
 
-        # ── Step 3: Check consensus ──────────────────────────────────────────
+        # ── Step 3: Check consensus + quality ────────────────────────────────
         if verifier_label == gen_label:
-            print(f"[Consensus] Consensus reached on round {round_num} — label={gen_label!r}")
+            if quality_score < _MIN_QUALITY_SCORE:
+                print(
+                    f"[Consensus] Round {round_num}: Consensus on label but quality"
+                    f" too low ({quality_score}<{_MIN_QUALITY_SCORE}) — regenerating."
+                )
+                last_error = f"Round {round_num}: Quality score {quality_score} below threshold."
+                continue
+
+            print(
+                f"[Consensus] Consensus reached on round {round_num}"
+                f" — label={gen_label!r}, quality={quality_score}"
+            )
             email["_validated"]       = True
             email["_consensus_round"] = round_num
+            email["_quality_score"]   = quality_score
+            email["_scenario_type"]   = scenario_hint
+            _record_served_text(email_text)
             return email, None
         else:
             print(
@@ -384,7 +584,7 @@ def generate_ai_email(
         f"[Consensus] No consensus after {MAX_CONSENSUS_ROUNDS}"
         " rounds. Using fallback model directly."
     )
-    prompt_parts = _GENERATION_PROMPT_PARTS + [f"- The label must be exactly '{desired_label}'."]
+    prompt_parts = _FALLBACK_PROMPT_PARTS + [f"- The label must be exactly '{desired_label}'."]
     prompt = " ".join(prompt_parts)
 
     for _ in range(max_attempts):
@@ -392,7 +592,7 @@ def generate_ai_email(
             response = client.chat.completions.create(
                 model=OR_FALLBACK_MODEL,
                 messages=[{"role": "user", "content": prompt}],
-                temperature=0.7,
+                temperature=0.85,
                 max_tokens=400,
             )
             raw_text = response.choices[0].message.content if response.choices else ""
@@ -403,11 +603,14 @@ def generate_ai_email(
                 label = fb_email.get("label", "").strip().lower()
                 if text and label == desired_label and len(text) <= max_length:
                     print(f"[Fallback] Success with {OR_FALLBACK_MODEL}")
+                    _record_served_text(text)
                     return {
                         "text": text,
                         "label": label,
                         "_validated": False,
                         "_consensus_round": 0,
+                        "_quality_score": 0,
+                        "_scenario_type": "",
                         "_model": OR_FALLBACK_MODEL,
                     }, None
         except Exception as exc:
@@ -593,6 +796,7 @@ def create_app() -> Flask:
 
             # SEC-07: Strip internal metadata before sending to client
             email.pop("_model", None)
+            email.pop("_scenario_type", None)  # Would reveal the answer
 
             return jsonify(email), 200
         except Exception:

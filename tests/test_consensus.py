@@ -22,10 +22,14 @@ def _reload_app(monkeypatch):
     monkeypatch.setenv("GROQ_API_KEY", "gsk_test_key")
     if "app" in sys.modules:
         del sys.modules["app"]
-    import app as app_module
 
-    # Reset global prefetch state so any startup background thread
-    # does not race with test mock side_effects.
+    # Patch threading.Thread so the module-level startup prefetch (app.py line 644)
+    # never actually spawns.  This prevents the background thread from consuming
+    # mock side_effects before the test's own `with patch.object(...)` block runs.
+    with patch("threading.Thread"):
+        import app as app_module
+
+    # Reset global prefetch state for a clean slate.
     with app_module._prefetch_lock:
         app_module._prefetch_cache = None
         app_module._prefetch_busy = False
@@ -176,20 +180,22 @@ def test_groq_classify_phishing(monkeypatch):
     app_mod = _reload_app(monkeypatch)
 
     mock_client = MagicMock()
-    mock_client.chat.completions.create.return_value = _fake_choice("phishing")
+    mock_client.chat.completions.create.return_value = _fake_choice("phishing 4")
 
-    result = app_mod._groq_classify(mock_client, "Some email text")
-    assert result == "phishing"
+    label, score = app_mod._groq_classify(mock_client, "Some email text")
+    assert label == "phishing"
+    assert score == 4
 
 
 def test_groq_classify_legitimate(monkeypatch):
     app_mod = _reload_app(monkeypatch)
 
     mock_client = MagicMock()
-    mock_client.chat.completions.create.return_value = _fake_choice("legitimate")
+    mock_client.chat.completions.create.return_value = _fake_choice("legitimate 5")
 
-    result = app_mod._groq_classify(mock_client, "Some email text")
-    assert result == "legitimate"
+    label, score = app_mod._groq_classify(mock_client, "Some email text")
+    assert label == "legitimate"
+    assert score == 5
 
 
 def test_groq_classify_ambiguous_returns_none(monkeypatch):
@@ -198,8 +204,9 @@ def test_groq_classify_ambiguous_returns_none(monkeypatch):
     mock_client = MagicMock()
     mock_client.chat.completions.create.return_value = _fake_choice("I'm not sure, maybe spam?")
 
-    result = app_mod._groq_classify(mock_client, "Some email text")
-    assert result is None
+    label, score = app_mod._groq_classify(mock_client, "Some email text")
+    assert label is None
+    assert score == 0
 
 
 def test_groq_classify_exception_returns_none(monkeypatch):
@@ -208,21 +215,23 @@ def test_groq_classify_exception_returns_none(monkeypatch):
     mock_client = MagicMock()
     mock_client.chat.completions.create.side_effect = Exception("Network error")
 
-    result = app_mod._groq_classify(mock_client, "Some email text")
-    assert result is None
+    label, score = app_mod._groq_classify(mock_client, "Some email text")
+    assert label is None
+    assert score == 0
 
 
 def test_groq_classify_none_client(monkeypatch):
     app_mod = _reload_app(monkeypatch)
-    result = app_mod._groq_classify(None, "Some email text")
-    assert result is None
+    label, score = app_mod._groq_classify(None, "Some email text")
+    assert label is None
+    assert score == 0
 
 
 # ─── generate_ai_email (consensus loop) ──────────────────────────────────────
 
 
 def test_consensus_reached_round_1(monkeypatch):
-    """When generator and verifier agree, consensus should be reached in round 1."""
+    """When generator and verifier agree with high quality, consensus should be reached."""
     app_mod = _reload_app(monkeypatch)
 
     mock_or_client = MagicMock()
@@ -231,7 +240,7 @@ def test_consensus_reached_round_1(monkeypatch):
     )
 
     mock_groq_client = MagicMock()
-    mock_groq_client.chat.completions.create.return_value = _fake_choice("phishing")
+    mock_groq_client.chat.completions.create.return_value = _fake_choice("phishing 4")
 
     with patch.object(app_mod, "_make_or_client", return_value=mock_or_client), \
          patch.object(app_mod, "Groq", return_value=mock_groq_client), \
@@ -243,6 +252,7 @@ def test_consensus_reached_round_1(monkeypatch):
     assert error is None
     assert email["_validated"] is True
     assert email["_consensus_round"] == 1
+    assert email["_quality_score"] == 4
 
 
 def test_consensus_disagreement_retries(monkeypatch):
@@ -255,10 +265,10 @@ def test_consensus_disagreement_retries(monkeypatch):
     )
 
     mock_groq_client = MagicMock()
-    # Round 1: disagree; Round 2: agree
+    # Round 1: disagree; Round 2: agree with quality
     mock_groq_client.chat.completions.create.side_effect = [
-        _fake_choice("legitimate"),   # Disagree
-        _fake_choice("phishing"),     # Agree
+        _fake_choice("legitimate 3"),   # Disagree
+        _fake_choice("phishing 4"),     # Agree
     ]
 
     # Patch _trigger_prefetch to no-op — the background thread would race with
@@ -272,6 +282,7 @@ def test_consensus_disagreement_retries(monkeypatch):
     assert email is not None
     assert email["_validated"] is True
     assert email["_consensus_round"] == 2
+    assert email["_quality_score"] == 4
 
 
 def test_verifier_failure_serves_unverified(monkeypatch):
@@ -294,6 +305,7 @@ def test_verifier_failure_serves_unverified(monkeypatch):
     assert email is not None
     assert email["_validated"] is False
     assert email["_consensus_round"] == 0
+    assert email["_quality_score"] == 0
 
 
 def test_missing_api_keys_returns_error(monkeypatch):
