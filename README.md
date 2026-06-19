@@ -1,19 +1,24 @@
 # 🛡️ PhishGuard: Your Personal Phishing Radar Trainer
 
-<div align="center">
+<div align="right">
 
 <!-- CI/CD & Code Quality -->
-[![Build Status](https://img.shields.io/github/actions/workflow/status/SagarBiswas-MultiHAT/Ai-Phishy-Playground/ci.yml?branch=main&label=CI%20Build&style=flat-square)](https://github.com/SagarBiswas-MultiHAT/Ai-Phishy-Playground/actions)
-[![Python Version](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square&logo=python)](https://www.python.org/)
-[![Code Style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=flat-square)](https://github.com/astral-sh/ruff)
-
 <!-- Tech Stack -->
-[![Powered by OpenRouter](https://img.shields.io/badge/AI-OpenRouter-white?style=flat-square&logo=openai&logoColor=black)](https://openrouter.ai)
-[![Powered by Groq](https://img.shields.io/badge/Verified_by-Groq-f55036?style=flat-square)](https://groq.com)
-
 <!-- Deployment & Licensing -->
+[![Build Status](https://img.shields.io/github/actions/workflow/status/SagarBiswas-MultiHAT/Ai-Phishy-Playground/ci.yml?branch=main&label=CI%20Build&style=flat-square)](https://github.com/SagarBiswas-MultiHAT/Ai-Phishy-Playground/actions)
+&nbsp;
+[![Python Version](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square&logo=python)](https://www.python.org/)
+&nbsp;
+[![Code Style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=flat-square)](https://github.com/astral-sh/ruff)
+&nbsp;
+[![Powered by OpenRouter](https://img.shields.io/badge/AI-OpenRouter-white?style=flat-square&logo=openai&logoColor=black)](https://openrouter.ai)
+&nbsp;
+[![Powered by Groq](https://img.shields.io/badge/Verified_by-Groq-f55036?style=flat-square)](https://groq.com)
+&nbsp;
 [![Live Deployment](https://img.shields.io/website?url=https%3A%2F%2Fphishguard.multihat.dev&up_message=online&down_message=offline&style=flat-square&label=PhishGuard%20Live)](https://phishguard.multihat.dev)
+&nbsp;
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+&nbsp;
 
 </div>
 
