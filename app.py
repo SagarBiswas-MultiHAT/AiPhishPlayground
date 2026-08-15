@@ -24,6 +24,24 @@ from typing import Any
 
 from flask import Flask, Response, jsonify, render_template, request
 
+def _load_dotenv() -> None:
+    """Load environment variables from a local .env file if it exists."""
+    env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    if os.path.isfile(env_file):
+        try:
+            with open(env_file, encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        k, v = k.strip(), v.strip().strip('"').strip("'")
+                        if k and k not in os.environ:
+                            os.environ[k] = v
+        except Exception:
+            pass
+
+_load_dotenv()
+
 try:
     from openai import OpenAI as _OpenAI
 except ImportError:  # REL-04: catch only ImportError, not all exceptions
@@ -57,13 +75,14 @@ MAX_CONSENSUS_ROUNDS = 5
 # ─── OpenRouter Models ───────────────────────────────────────────────────────
 # We use only free models to guarantee zero cost.
 OR_GENERATOR_MODELS: list[str] = [
-    "openai/gpt-oss-120b:free",                # Primary: Massive, smart, 120B parameters
-    "nousresearch/hermes-3-llama-3.1-405b:free",  # Fallback 1: High quality 405B model
-    "meta-llama/llama-3.3-70b-instruct:free",  # Fallback 2: Proven capable generator
+    "google/gemma-4-26b-a4b-it:free",          # Fast, accurate JSON formatting, 26B
+    "nvidia/nemotron-3-super-120b-a12b:free",  # Massive 120B parameter model
+    "google/gemma-4-31b-it:free",              # Capable 31B instruction-tuned model
+    "openai/gpt-oss-20b:free",                 # Fast secondary generator
 ]
 
 
-# Fast 20B model for direct generation if consensus fails
+# Fast model for direct generation if consensus fails
 OR_FALLBACK_MODEL = "openai/gpt-oss-20b:free"
 
 # ─── Scenario Taxonomy ──────────────────────────────────────────────────────

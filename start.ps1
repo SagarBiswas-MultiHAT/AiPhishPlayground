@@ -2,8 +2,22 @@
 # Usage: .\start.ps1
 # Set your API keys here (or export them from your system environment)
 
+# ── Load from .env if present ───────────────────────────────────────────────
+if (Test-Path "$PSScriptRoot\.env") {
+    Get-Content "$PSScriptRoot\.env" | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -and -not $line.StartsWith("#") -and $line -match '^([^=]+)=(.*)$') {
+            $key = $matches[1].Trim()
+            $val = $matches[2].Trim().Trim('"').Trim("'")
+            if (-not [System.Environment]::GetEnvironmentVariable($key, "Process")) {
+                [System.Environment]::SetEnvironmentVariable($key, $val, "Process")
+            }
+        }
+    }
+}
+
 # ── Required: OpenRouter & Groq API Keys ─────────────────────────────────────────────
-# Keys set in the terminal BEFORE running this script take priority.
+# Keys set in the terminal or .env BEFORE running this script take priority.
 if (-not $env:OPENROUTER_API_KEY) { $env:OPENROUTER_API_KEY = "your_openrouter_key_here" }
 if (-not $env:GROQ_API_KEY) { $env:GROQ_API_KEY = "your_groq_key_here" }
 

@@ -124,6 +124,7 @@ FeedBack/
 # Environment files
 .env
 .env.*
+!.env.example
 
 # Python egg
 *.egg-info/

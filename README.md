@@ -82,7 +82,20 @@ pip install -r requirements-ai.txt
 
 ### 3. Start the Game!
 
-Set your API keys and launch the server:
+Create a `.env` file (or copy `.env.example`) in the root directory:
+
+```env
+OPENROUTER_API_KEY=sk-or-v1-your-key-here
+GROQ_API_KEY=gsk_your-key-here
+```
+
+Then launch the server:
+
+```powershell
+.\start.ps1
+```
+
+*(Alternatively, you can set them inline in PowerShell without creating a `.env` file:)*
 
 ```powershell
 $env:OPENROUTER_API_KEY = "sk-or-v1-your-key-here"
@@ -100,7 +113,7 @@ For the curious minds, here is how PhishGuard ensures the emails are always high
 
 Instead of relying on a single AI, PhishGuard uses a **hybrid Consensus Engine**:
 
-1. **The Writer** — `openai/gpt-oss-120b:free` via OpenRouter is asked to write either a safe email or a phishing scam.
+1. **The Writer** — High-capacity free models (e.g. `nvidia/nemotron-3-super-120b`, `google/gemma-4-26b`) via OpenRouter are asked to write either a safe email or a phishing scam.
 2. **The Reviewer** — `llama-3.3-70b-versatile` via Groq is then shown the same email — without knowing the intended label — and classifies it independently.
 3. If both AI models agree on the label, the email is served to you with a **✅ Dual-AI Verified** badge.
 4. If they disagree, the system silently discards it and generates a fresh one (up to 5 rounds).
